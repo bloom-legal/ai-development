@@ -6,7 +6,24 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 AUTO_MODE=false
-[[ "$1" == "--auto" ]] && AUTO_MODE=true
+SKIP_SECRETS=false
+
+# Parse arguments
+for arg in "$@"; do
+    case "$arg" in
+        --auto) AUTO_MODE=true ;;
+        --skip-secrets) SKIP_SECRETS=true ;;
+        --help|-h)
+            echo "Usage: ./install.sh [options]"
+            echo ""
+            echo "Options:"
+            echo "  --auto          Install all without interactive menu"
+            echo "  --skip-secrets  Skip MCP secrets configuration"
+            echo "  --help          Show this help"
+            exit 0
+            ;;
+    esac
+done
 
 # Colors (with fallback for non-color terminals)
 if [[ -t 1 ]] && [[ "${TERM:-}" != "dumb" ]]; then
@@ -231,33 +248,52 @@ configure_mcp() {
         set +a
     fi
 
-    echo ""
-    echo -e "${B}Configure MCP server secrets (press Enter to skip/keep current):${N}"
-    echo ""
+    # Only prompt for secrets if not skipped
+    if ! $SKIP_SECRETS; then
+        echo ""
+        echo -e "${B}Configure MCP server secrets (press Enter to skip, 's' to skip all):${N}"
+        echo ""
 
-    # PostgreSQL
-    current_pg="${POSTGRES_CONNECTION:-}"
-    printf "PostgreSQL connection [user:pass@host:port/db]"
-    [ -n "$current_pg" ] && printf " (current: %s...)" "${current_pg:0:20}"
-    printf ": "
-    read -r input_pg || input_pg=""
-    [ -n "$input_pg" ] && POSTGRES_CONNECTION="$input_pg"
+        # PostgreSQL
+        current_pg="${POSTGRES_CONNECTION:-}"
+        printf "PostgreSQL connection [user:pass@host:port/db]"
+        [ -n "$current_pg" ] && printf " (current: %s...)" "${current_pg:0:20}"
+        printf ": "
+        read -r input_pg || input_pg=""
+        if [[ "$input_pg" == "s" ]]; then
+            SKIP_SECRETS=true
+            log "Skipping remaining secrets"
+        elif [ -n "$input_pg" ]; then
+            POSTGRES_CONNECTION="$input_pg"
+        fi
 
-    # Portainer Server
-    current_server="${PORTAINER_SERVER:-}"
-    printf "Portainer server hostname"
-    [ -n "$current_server" ] && printf " (current: %s)" "$current_server"
-    printf ": "
-    read -r input_server || input_server=""
-    [ -n "$input_server" ] && PORTAINER_SERVER="$input_server"
+        if ! $SKIP_SECRETS; then
+            # Portainer Server
+            current_server="${PORTAINER_SERVER:-}"
+            printf "Portainer server hostname"
+            [ -n "$current_server" ] && printf " (current: %s)" "$current_server"
+            printf ": "
+            read -r input_server || input_server=""
+            if [[ "$input_server" == "s" ]]; then
+                SKIP_SECRETS=true
+                log "Skipping remaining secrets"
+            elif [ -n "$input_server" ]; then
+                PORTAINER_SERVER="$input_server"
+            fi
+        fi
 
-    # Portainer Token
-    current_token="${PORTAINER_TOKEN:-}"
-    printf "Portainer API token"
-    [ -n "$current_token" ] && printf " (current: %s...)" "${current_token:0:10}"
-    printf ": "
-    read -r input_token || input_token=""
-    [ -n "$input_token" ] && PORTAINER_TOKEN="$input_token"
+        if ! $SKIP_SECRETS; then
+            # Portainer Token
+            current_token="${PORTAINER_TOKEN:-}"
+            printf "Portainer API token"
+            [ -n "$current_token" ] && printf " (current: %s...)" "${current_token:0:10}"
+            printf ": "
+            read -r input_token || input_token=""
+            [ -n "$input_token" ] && PORTAINER_TOKEN="$input_token"
+        fi
+    else
+        log "Skipping secrets configuration (using existing or defaults)"
+    fi
 
     # Save to .env
     cat > "$ENV_FILE" << EOF
@@ -323,7 +359,24 @@ do_install() {
     if [ $any_selected -eq 0 ]; then
         echo -e "${G}Nothing to install - everything is already set up!${N}"
     else
-        echo -e "${G}${BOLD}Installation complete!${N}"
+        # Run verification
+        echo -e "${B}Verifying installation...${N}"
+        echo ""
+
+        local errors=0
+        command -v brew &>/dev/null && echo -e "${G}✓${N} Homebrew" || { echo -e "${R}✗${N} Homebrew"; ((errors++)) || true; }
+        command -v git &>/dev/null && echo -e "${G}✓${N} Git" || { echo -e "${R}✗${N} Git"; ((errors++)) || true; }
+        command -v node &>/dev/null && echo -e "${G}✓${N} Node.js" || { echo -e "${R}✗${N} Node.js"; ((errors++)) || true; }
+        command -v claude &>/dev/null && echo -e "${G}✓${N} Claude Code CLI" || { echo -e "${Y}⚠${N} Claude Code CLI (restart terminal)"; }
+        [ -d "/Applications/Cursor.app" ] && echo -e "${G}✓${N} Cursor" || { echo -e "${R}✗${N} Cursor"; ((errors++)) || true; }
+        [ -f ~/.cursor/mcp.json ] && echo -e "${G}✓${N} MCP Configs" || { echo -e "${Y}⚠${N} MCP Configs"; }
+
+        echo ""
+        if [ $errors -eq 0 ]; then
+            echo -e "${G}${BOLD}Installation complete!${N}"
+        else
+            echo -e "${Y}Installation complete with $errors warning(s)${N}"
+        fi
         echo ""
         echo "Next steps:"
         echo "  1. Open a new terminal window (to refresh PATH)"
@@ -332,8 +385,12 @@ do_install() {
     fi
 
     echo ""
-    echo "Press any key to exit..."
-    read -rsn1 || true
+    if $AUTO_MODE; then
+        sleep 2
+    else
+        echo "Press any key to exit..."
+        read -rsn1 || true
+    fi
 }
 
 # Non-interactive mode (for piped input)

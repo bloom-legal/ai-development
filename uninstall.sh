@@ -3,9 +3,21 @@
 # Navigate with arrow keys, space to toggle, enter to confirm
 set -e
 
-# Colors
-R='\033[0;31m' G='\033[0;32m' Y='\033[1;33m' B='\033[0;34m' N='\033[0m'
-DIM='\033[2m' BOLD='\033[1m'
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Colors (with fallback for non-color terminals)
+if [[ -t 1 ]] && [[ "${TERM:-}" != "dumb" ]]; then
+    R='\033[0;31m' G='\033[0;32m' Y='\033[1;33m' B='\033[0;34m' N='\033[0m'
+    DIM='\033[2m' BOLD='\033[1m'
+else
+    R='' G='' Y='' B='' N='' DIM='' BOLD=''
+fi
+
+# Check if terminal supports TUI
+TUI_SUPPORTED=true
+if [[ ! -t 0 ]] || [[ ! -t 1 ]] || ! command -v tput &>/dev/null; then
+    TUI_SUPPORTED=false
+fi
 
 # Items to uninstall: "name|command|description"
 ITEMS=(
@@ -30,9 +42,20 @@ CURRENT=0
 TOTAL=${#ITEMS[@]}
 MIN_POS=-2  # -2=Deselect All, -1=Select All, 0+=items
 
-# Hide cursor
-tput civis
-trap 'tput cnorm; echo' EXIT
+# Hide cursor (with error handling)
+hide_cursor() {
+    if $TUI_SUPPORTED; then
+        tput civis 2>/dev/null || true
+    fi
+}
+
+show_cursor() {
+    if $TUI_SUPPORTED; then
+        tput cnorm 2>/dev/null || true
+    fi
+}
+
+trap 'show_cursor; echo' EXIT
 
 # Draw the menu
 draw_menu() {
@@ -146,19 +169,43 @@ do_uninstall() {
     read -rsn1
 }
 
+# Non-interactive list mode
+run_list_mode() {
+    echo -e "${BOLD}${R}=== Uninstall AI Development Environment ===${N}"
+    echo ""
+    echo "Installed components:"
+    echo ""
+
+    for i in "${!ITEMS[@]}"; do
+        IFS='|' read -r name cmd desc <<< "${ITEMS[$i]}"
+        echo "  $((i+1)). $name - $desc"
+    done
+
+    echo ""
+    echo "Run ./uninstall.sh in an interactive terminal to select items to remove."
+}
+
+# Main
+if ! $TUI_SUPPORTED; then
+    run_list_mode
+    exit 0
+fi
+
+hide_cursor
+
 # Main loop
 while true; do
     draw_menu
 
     # Read single keypress
-    read -rsn1 key
+    read -rsn1 key 2>/dev/null || { run_list_mode; exit 0; }
 
     case "$key" in
         A|k) # Up arrow or k
-            ((CURRENT > MIN_POS)) && ((CURRENT--))
+            ((CURRENT > MIN_POS)) && ((CURRENT--)) || true
             ;;
         B|j) # Down arrow or j
-            ((CURRENT < TOTAL - 1)) && ((CURRENT++))
+            ((CURRENT < TOTAL - 1)) && ((CURRENT++)) || true
             ;;
         ' ') # Space - toggle
             toggle_current
@@ -195,10 +242,10 @@ while true; do
             fi
             ;;
         $'\x1b') # Escape sequence (arrow keys)
-            read -rsn2 arrow
+            read -rsn2 arrow 2>/dev/null || true
             case "$arrow" in
-                '[A') ((CURRENT > MIN_POS)) && ((CURRENT--)) ;;
-                '[B') ((CURRENT < TOTAL - 1)) && ((CURRENT++)) ;;
+                '[A') ((CURRENT > MIN_POS)) && ((CURRENT--)) || true ;;
+                '[B') ((CURRENT < TOTAL - 1)) && ((CURRENT++)) || true ;;
             esac
             ;;
     esac

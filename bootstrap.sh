@@ -46,6 +46,20 @@ if [[ "$(uname)" != "Darwin" ]]; then
     error "This script is for macOS only"
 fi
 
+# Check for internet connectivity
+header "Connectivity"
+if ! ping -c 1 -t 5 github.com &>/dev/null && ! curl -s --head --max-time 5 https://github.com &>/dev/null; then
+    error "No internet connection. Please connect to the internet and try again."
+fi
+log "Internet connection available"
+
+# Check disk space (need at least 5GB free)
+free_space_gb=$(df -g "$HOME" | awk 'NR==2 {print $4}')
+if [[ "$free_space_gb" -lt 5 ]]; then
+    error "Insufficient disk space. Need at least 5GB free, have ${free_space_gb}GB."
+fi
+log "Disk space OK (${free_space_gb}GB free)"
+
 # Check macOS version (need 10.14+)
 macos_version=$(sw_vers -productVersion)
 major_version=$(echo "$macos_version" | cut -d. -f1)
