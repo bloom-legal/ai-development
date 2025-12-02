@@ -56,7 +56,8 @@ Press Enter to skip any value. Re-run `./install.sh` anytime to update secrets.
 ## Commands
 
 ```bash
-./install.sh          # Full installation
+./install.sh          # Full installation (interactive)
+./uninstall.sh        # Interactive uninstall with checklist
 ./check.sh            # Verify setup
 ./check.sh --fix      # Auto-fix issues
 ./sync-rules.sh mcp   # Sync MCP configs to all tools
