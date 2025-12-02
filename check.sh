@@ -173,7 +173,7 @@ check_mcp_config() {
                 ((ERRORS++))
                 if remediate; then
                     warn "Syncing MCPs..."
-                    "$SCRIPT_DIR/sync-rules.sh" mcp
+                    SKIP_PREFLIGHT=1 "$SCRIPT_DIR/sync-rules.sh" mcp
                 fi
             fi
         else
@@ -181,7 +181,7 @@ check_mcp_config() {
             ((ERRORS++))
             if remediate; then
                 warn "Syncing MCPs..."
-                "$SCRIPT_DIR/sync-rules.sh" mcp
+                SKIP_PREFLIGHT=1 "$SCRIPT_DIR/sync-rules.sh" mcp
             fi
         fi
     else
@@ -190,7 +190,7 @@ check_mcp_config() {
         if remediate; then
             warn "Creating config..."
             mkdir -p "$(dirname "$path")"
-            "$SCRIPT_DIR/sync-rules.sh" mcp
+            SKIP_PREFLIGHT=1 "$SCRIPT_DIR/sync-rules.sh" mcp
         fi
     fi
 }
