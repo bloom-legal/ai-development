@@ -1,0 +1,69 @@
+{
+  "mcpServers": {
+    "context7": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@upstash/context7-mcp"
+      ]
+    },
+    "sequential-thinking": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-sequential-thinking"
+      ]
+    },
+    "npm-helper": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@pinkpixel/npm-helper-mcp"
+      ]
+    },
+    "postgres": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-postgres",
+        "postgresql://***REMOVED***"
+      ]
+    },
+    "docker": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": [
+        "docker-mcp"
+      ]
+    },
+    "puppeteer": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "puppeteer-mcp-server"
+      ]
+    },
+    "jina": {
+      "type": "sse",
+      "url": "https://mcp.jina.ai/sse"
+    },
+    "portainer": {
+      "type": "stdio",
+      "command": "/Users/joachimbrindeau/.local/bin/portainer-mcp",
+      "args": [
+        "-server",
+        "***REMOVED***",
+        "-token",
+        "***REMOVED***",
+        "-tools",
+        "/tmp/portainer-tools.yaml",
+        "-disable-version-check"
+      ]
+    }
+  }
+}

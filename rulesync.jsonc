@@ -1,0 +1,8 @@
+{
+  "$schema": "https://raw.githubusercontent.com/dyoshikawa/rulesync/main/schema.json",
+  "targets": ["cursor", "roo"],
+  "features": ["rules", "ignore", "mcp", "commands"],
+  "simulateCommands": true,
+  "delete": true,
+  "verbose": false
+}

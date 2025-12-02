@@ -1,0 +1,65 @@
+{
+  "mcpServers": {
+    "context7": {
+      "description": "Up-to-date documentation and code examples for libraries",
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp"]
+    },
+    "sequential-thinking": {
+      "description": "Step-by-step reasoning and problem decomposition",
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"]
+    },
+    "npm-helper": {
+      "description": "Search npm packages and check for updates",
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@pinkpixel/npm-helper-mcp"]
+    },
+    "postgres": {
+      "description": "Query PostgreSQL databases",
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-postgres", "postgresql://***REMOVED***"]
+    },
+    "docker": {
+      "description": "Manage Docker containers and compose stacks",
+      "type": "stdio",
+      "command": "uvx",
+      "args": ["docker-mcp"]
+    },
+    "puppeteer": {
+      "description": "Browser automation - navigate, screenshot, click, fill forms",
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "puppeteer-mcp-server"]
+    },
+    "jina": {
+      "description": "Web search, read URLs, search images and academic papers",
+      "type": "sse",
+      "url": "https://mcp.jina.ai/sse"
+    },
+    "portainer": {
+      "description": "Manage Portainer environments, stacks, and Docker/Kubernetes resources",
+      "type": "stdio",
+      "command": "/Users/joachimbrindeau/.local/bin/portainer-mcp",
+      "args": [
+        "-server",
+        "***REMOVED***",
+        "-token",
+        "***REMOVED***",
+        "-tools",
+        "/tmp/portainer-tools.yaml",
+        "-disable-version-check"
+      ]
+    },
+    "chrome-devtools": {
+      "description": "Chrome DevTools - inspect, debug, profile pages via CDP",
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "chrome-devtools-mcp"]
+    }
+  }
+}

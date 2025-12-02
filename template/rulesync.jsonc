@@ -1,0 +1,10 @@
+{
+  "$schema": "https://raw.githubusercontent.com/dyoshikawa/rulesync/main/schema.json",
+  // Template: canonical source for shared rules, commands, MCP configs
+  // Run sync-rules.sh to push to all projects
+  "targets": ["claudecode", "cursor", "roo"],
+  "features": ["rules", "ignore", "mcp", "commands"],
+  "simulateCommands": true,
+  "delete": true,
+  "verbose": false
+}
