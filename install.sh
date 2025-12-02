@@ -1,9 +1,12 @@
 #!/bin/bash
 # Interactive installation script for AI development environment
 # Navigate with arrow keys, space to toggle, enter to confirm
+# Use --auto flag to install all without menu (still prompts for MCP secrets)
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+AUTO_MODE=false
+[[ "$1" == "--auto" ]] && AUTO_MODE=true
 
 # Colors (with fallback for non-color terminals)
 if [[ -t 1 ]] && [[ "${TERM:-}" != "dumb" ]]; then
@@ -367,7 +370,27 @@ run_non_interactive() {
     echo "Run ./install.sh again to configure MCP secrets."
 }
 
+# Auto mode: install all without menu
+run_auto_mode() {
+    echo -e "${BOLD}${G}=== Install AI Development Environment ===${N}"
+    echo ""
+
+    # Select all uninstalled items
+    for i in "${!SELECTED[@]}"; do
+        if [ ${INSTALLED[$i]} -eq 0 ]; then
+            SELECTED[$i]=1
+        fi
+    done
+
+    do_install
+}
+
 # Main
+if $AUTO_MODE; then
+    run_auto_mode
+    exit 0
+fi
+
 if ! $TUI_SUPPORTED; then
     run_non_interactive
     exit 0

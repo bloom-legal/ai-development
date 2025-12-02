@@ -75,36 +75,45 @@ else
     # Touch file to trigger installation
     touch /tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress
 
-    # Find the package name
-    PROD=$(softwareupdate -l 2>/dev/null | grep -B 1 "Command Line Tools" | grep -o "Command Line Tools.*" | head -n 1)
+    # Find the package name (try multiple patterns)
+    PROD=$(softwareupdate -l 2>/dev/null | grep -E "Command Line Tools|CLTools" | grep -v "^$" | head -n 1 | sed 's/^[* ]*//' | sed 's/^ *//')
+
+    if [[ -z "$PROD" ]]; then
+        # Alternative: look for Label line
+        PROD=$(softwareupdate -l 2>/dev/null | grep -o "Command Line Tools for Xcode-[0-9.]*" | head -n 1)
+    fi
 
     if [[ -n "$PROD" ]]; then
-        warn "Installing via softwareupdate: $PROD"
-        softwareupdate -i "$PROD" --verbose || {
-            rm -f /tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress
-            warn "Automatic install failed, falling back to manual install..."
-            xcode-select --install 2>/dev/null || true
-            echo ""
-            echo "Please complete the Xcode Command Line Tools installation dialog."
-            echo "Press Enter when the installation is complete..."
-            read -r
+        warn "Installing: $PROD"
+        softwareupdate -i "$PROD" --verbose 2>&1 || softwareupdate -i "$PROD" 2>&1 || {
+            warn "softwareupdate failed, trying xcode-select..."
         }
-    else
-        # Fallback to interactive install
-        xcode-select --install 2>/dev/null || true
-        echo ""
-        echo "Please complete the Xcode Command Line Tools installation dialog."
-        echo "Press Enter when the installation is complete..."
-        read -r
     fi
 
     rm -f /tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress
 
-    # Verify installation
+    # If still not installed, try xcode-select and wait
     if ! xcode-select -p &>/dev/null; then
-        error "Xcode CLI tools installation failed. Please install manually and re-run."
+        xcode-select --install 2>/dev/null &
+        warn "Waiting for Xcode CLI tools installation (this may take a few minutes)..."
+
+        # Wait up to 10 minutes for installation
+        for i in {1..120}; do
+            if xcode-select -p &>/dev/null; then
+                break
+            fi
+            sleep 5
+            printf "."
+        done
+        echo ""
     fi
-    log "Xcode CLI tools installed"
+
+    # Final check
+    if xcode-select -p &>/dev/null; then
+        log "Xcode CLI tools installed"
+    else
+        error "Xcode CLI tools installation failed. Please run 'xcode-select --install' manually and re-run this script."
+    fi
 fi
 
 # 2. Install Homebrew
@@ -191,8 +200,8 @@ header "Running Install Script"
 cd "$INSTALL_DIR"
 chmod +x install.sh check.sh sync-rules.sh uninstall.sh 2>/dev/null || true
 
-# Run install (it has its own interactive UI)
-./install.sh
+# Run install in auto mode (installs all, only prompts for MCP secrets)
+./install.sh --auto
 
 header "Bootstrap Complete!"
 echo ""
