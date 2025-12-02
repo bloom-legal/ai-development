@@ -171,10 +171,43 @@ clean_local_mcps() {
     log "Cleaned $count projects"
 }
 
+# Pre-flight check and remediation
+preflight_check() {
+    local check_script="$SCRIPT_DIR/check.sh"
+
+    if [ ! -f "$check_script" ]; then
+        warn "check.sh not found, skipping pre-flight check"
+        return 0
+    fi
+
+    header "Pre-flight check..."
+    if ! "$check_script" 2>/dev/null; then
+        warn "Issues detected, attempting remediation..."
+        "$check_script" --fix 2>/dev/null || true
+
+        # Verify fix worked
+        if ! "$check_script" 2>/dev/null; then
+            warn "Some issues remain, continuing anyway..."
+        else
+            log "Remediation successful"
+        fi
+    else
+        log "All checks passed"
+    fi
+}
+
+# Get script directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 # Main
 header "=== Sync: SpecKit + SuperClaude + Rulesync ==="
 
 action="${1:-sync}"
+
+# Run pre-flight check for sync operations (skip for help/clean)
+if [[ "$action" =~ ^(sync|generate|mcp|update)$ ]]; then
+    preflight_check
+fi
 
 if [[ "$action" == "update" ]]; then
     warn "Updating tools..."
