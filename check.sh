@@ -141,13 +141,20 @@ done
 header "MCP Template"
 
 # Check template exists
-if [ -f "$TPL/.rulesync/mcp.json" ]; then
+if [ -f "$TPL/.rulesync/mcp.json.template" ]; then
     ok "MCP template exists"
-    MCP_COUNT=$(jq '.mcpServers | keys | length' "$TPL/.rulesync/mcp.json" 2>/dev/null || echo 0)
+    MCP_COUNT=$(jq '.mcpServers | keys | length' "$TPL/.rulesync/mcp.json.template" 2>/dev/null || echo 0)
     ok "Template has $MCP_COUNT MCP servers"
 else
-    fail "MCP template not found at $TPL/.rulesync/mcp.json"
+    fail "MCP template not found at $TPL/.rulesync/mcp.json.template"
     ((ERRORS++))
+fi
+
+# Check .env file
+if [ -f "$SCRIPT_DIR/.env" ]; then
+    ok ".env file exists (secrets configured)"
+else
+    warn ".env file missing - copy .env.example and add your secrets"
 fi
 
 header "Global MCP Configs"
@@ -218,6 +225,13 @@ check_mcp_server() {
 check_mcp_server "context7" "npx"
 check_mcp_server "docker-mcp" "uvx"
 check_mcp_server "puppeteer" "npx"
+
+# Check portainer-mcp binary (optional)
+if [ -f "$HOME/.local/bin/portainer-mcp" ]; then
+    ok "portainer-mcp binary exists"
+else
+    warn "portainer-mcp binary not found (optional - install if using Portainer)"
+fi
 
 header "Summary"
 

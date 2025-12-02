@@ -5,6 +5,12 @@
 .rooignore
 AGENTS.md
 
+# Environment files with secrets
+.env
+
+# Generated MCP config (contains secrets from .env)
+template/.rulesync/mcp.json
+
 # Logs
 logs/
 

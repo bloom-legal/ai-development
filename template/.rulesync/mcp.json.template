@@ -18,6 +18,12 @@
       "command": "npx",
       "args": ["-y", "@pinkpixel/npm-helper-mcp"]
     },
+    "postgres": {
+      "description": "Query PostgreSQL databases",
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-postgres", "postgresql://$POSTGRES_CONNECTION"]
+    },
     "docker": {
       "description": "Manage Docker containers and compose stacks",
       "type": "stdio",
@@ -34,6 +40,20 @@
       "description": "Web search, read URLs, search images and academic papers",
       "type": "sse",
       "url": "https://mcp.jina.ai/sse"
+    },
+    "portainer": {
+      "description": "Manage Portainer environments, stacks, and Docker/Kubernetes resources",
+      "type": "stdio",
+      "command": "$HOME/.local/bin/portainer-mcp",
+      "args": [
+        "-server",
+        "$PORTAINER_SERVER",
+        "-token",
+        "$PORTAINER_TOKEN",
+        "-tools",
+        "/tmp/portainer-tools.yaml",
+        "-disable-version-check"
+      ]
     },
     "chrome-devtools": {
       "description": "Chrome DevTools - inspect, debug, profile pages via CDP",

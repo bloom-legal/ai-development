@@ -22,8 +22,31 @@ log() { echo -e "${G}$1${N}"; }
 warn() { echo -e "${Y}$1${N}"; }
 header() { echo -e "${B}$1${N}"; }
 
+# Generate MCP config from template
+generate_mcp_config() {
+    local template="$TPL/.rulesync/mcp.json.template"
+    local output="$TPL/.rulesync/mcp.json"
+    local env_file="$SCRIPT_DIR/.env"
+
+    [ ! -f "$template" ] && { warn "MCP template not found at $template"; return 1; }
+
+    # Load .env if it exists
+    if [ -f "$env_file" ]; then
+        set -a
+        source "$env_file"
+        set +a
+    fi
+
+    # Generate mcp.json from template
+    envsubst < "$template" > "$output"
+    log "Generated mcp.json from template"
+}
+
 # Sync MCPs to global configs
 sync_global_mcps() {
+    # Generate config from template first
+    generate_mcp_config || return 1
+
     header "Syncing MCPs to global configs..."
 
     local mcp_source="$TPL/.rulesync/mcp.json"

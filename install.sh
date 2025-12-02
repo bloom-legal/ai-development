@@ -119,7 +119,33 @@ mkdir -p ~/Library/Application\ Support/Cursor/User/globalStorage/rooveterinaryi
 mkdir -p ~/Development
 log "Directories created"
 
-# 10. Run initial sync
+# 10. Generate MCP config from template
+header "MCP Configuration"
+MCP_TEMPLATE="$SCRIPT_DIR/template/.rulesync/mcp.json.template"
+MCP_OUTPUT="$SCRIPT_DIR/template/.rulesync/mcp.json"
+ENV_FILE="$SCRIPT_DIR/.env"
+
+if [ -f "$MCP_TEMPLATE" ]; then
+    # Load .env if it exists
+    if [ -f "$ENV_FILE" ]; then
+        set -a
+        source "$ENV_FILE"
+        set +a
+        log "Loaded configuration from .env"
+    else
+        warn "No .env file found - using default placeholders"
+        warn "Copy .env.example to .env and fill in your values"
+    fi
+
+    # Generate mcp.json from template using envsubst
+    envsubst < "$MCP_TEMPLATE" > "$MCP_OUTPUT"
+    log "Generated mcp.json from template"
+else
+    error "MCP template not found at $MCP_TEMPLATE"
+    exit 1
+fi
+
+# 11. Run initial sync
 header "Initial Sync"
 if [ -f "$SCRIPT_DIR/sync-rules.sh" ]; then
     "$SCRIPT_DIR/sync-rules.sh" mcp
@@ -129,7 +155,7 @@ else
     exit 1
 fi
 
-# 11. Verify installation
+# 12. Verify installation
 header "Verification"
 "$SCRIPT_DIR/check.sh" || true
 
@@ -142,8 +168,10 @@ echo "  • Claude Code CLI"
 echo "  • MCP configs synced to all tools"
 echo ""
 echo "Next steps:"
-echo "  1. Open Cursor and sign in"
-echo "  2. Run 'claude' in terminal to authenticate Claude Code CLI"
+echo "  1. Copy .env.example to .env and add your secrets"
+echo "  2. Run ./install.sh again to regenerate MCP config"
+echo "  3. Open Cursor and sign in"
+echo "  4. Run 'claude' in terminal to authenticate Claude Code CLI"
 echo ""
 echo "Useful commands:"
 echo "  $SCRIPT_DIR/sync-rules.sh sync  # Sync all configs"
