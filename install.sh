@@ -1,6 +1,7 @@
 #!/bin/bash
 # One-time installation script for AI development environment
-# Installs: Homebrew, VS Code, Cursor, Claude Code + runs initial sync
+# Installs: Homebrew, Git, VS Code, Cursor, Claude Desktop, Claude Code CLI + runs initial sync
+# For fresh Mac, use bootstrap.sh instead (handles cloning this repo first)
 set -e
 
 # Colors
@@ -13,6 +14,13 @@ header() { echo -e "\n${B}=== $1 ===${N}"; }
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 header "AI Development Environment Setup"
+
+# Ensure brew is in PATH
+if [[ -f /opt/homebrew/bin/brew ]]; then
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+elif [[ -f /usr/local/bin/brew ]]; then
+    eval "$(/usr/local/bin/brew shellenv)"
+fi
 
 # 1. Install Homebrew
 header "Homebrew"
@@ -31,40 +39,18 @@ else
     log "Homebrew installed"
 fi
 
-# 2. Install VS Code
-header "Visual Studio Code"
-if brew list --cask visual-studio-code &>/dev/null || [ -d "/Applications/Visual Studio Code.app" ]; then
-    log "VS Code already installed"
+# 2. Install Git
+header "Git"
+if command -v git &>/dev/null; then
+    log "Git already installed ($(git --version | cut -d' ' -f3))"
 else
-    warn "Installing VS Code..."
-    brew install --cask visual-studio-code
-    log "VS Code installed"
+    warn "Installing Git..."
+    brew install git
+    log "Git installed"
 fi
 
-# 3. Install Cursor
-header "Cursor"
-if brew list --cask cursor &>/dev/null || [ -d "/Applications/Cursor.app" ]; then
-    log "Cursor already installed"
-else
-    warn "Installing Cursor..."
-    brew install --cask cursor
-    log "Cursor installed"
-fi
-
-# 4. Install Claude Code (CLI)
-header "Claude Code"
-if command -v claude &>/dev/null; then
-    log "Claude Code already installed"
-else
-    warn "Installing Claude Code..."
-    npm install -g @anthropic-ai/claude-code
-    log "Claude Code installed"
-fi
-
-# 5. Install dependencies
-header "Dependencies"
-
-# Node.js (required for MCP servers)
+# 3. Install Node.js (required before Claude Code CLI)
+header "Node.js"
 if command -v node &>/dev/null; then
     log "Node.js already installed ($(node --version))"
 else
@@ -72,6 +58,39 @@ else
     brew install node
     log "Node.js installed"
 fi
+
+# 4. Install VS Code
+header "Visual Studio Code"
+if [ -d "/Applications/Visual Studio Code.app" ]; then
+    log "VS Code already installed"
+else
+    warn "Installing VS Code..."
+    brew install --cask visual-studio-code
+    log "VS Code installed"
+fi
+
+# 5. Install Cursor
+header "Cursor"
+if [ -d "/Applications/Cursor.app" ]; then
+    log "Cursor already installed"
+else
+    warn "Installing Cursor..."
+    brew install --cask cursor
+    log "Cursor installed"
+fi
+
+# 6. Install Claude Code (CLI)
+header "Claude Code CLI"
+if command -v claude &>/dev/null; then
+    log "Claude Code CLI already installed"
+else
+    warn "Installing Claude Code CLI..."
+    npm install -g @anthropic-ai/claude-code
+    log "Claude Code CLI installed"
+fi
+
+# 8. Install other dependencies
+header "Dependencies"
 
 # jq (required for JSON manipulation in sync script)
 if command -v jq &>/dev/null; then
@@ -91,15 +110,16 @@ else
     log "uv installed"
 fi
 
-# 6. Create required directories
+# 9. Create required directories
 header "Directories"
 mkdir -p ~/.cursor
 mkdir -p ~/.claude/commands
 mkdir -p ~/Library/Application\ Support/Claude
 mkdir -p ~/Library/Application\ Support/Cursor/User/globalStorage/rooveterinaryinc.roo-code-nightly/settings
+mkdir -p ~/Development
 log "Directories created"
 
-# 7. Run initial sync
+# 10. Run initial sync
 header "Initial Sync"
 if [ -f "$SCRIPT_DIR/sync-rules.sh" ]; then
     "$SCRIPT_DIR/sync-rules.sh" mcp
@@ -109,16 +129,22 @@ else
     exit 1
 fi
 
-# 8. Verify installation
+# 11. Verify installation
 header "Verification"
 "$SCRIPT_DIR/check.sh" || true
 
 header "Setup Complete!"
 echo ""
+echo "Installed:"
+echo "  • Homebrew, Git, Node.js, jq, uv"
+echo "  • VS Code, Cursor"
+echo "  • Claude Code CLI"
+echo "  • MCP configs synced to all tools"
+echo ""
 echo "Next steps:"
 echo "  1. Open Cursor and sign in"
-echo "  2. Run 'claude' in terminal to authenticate Claude Code"
-echo "  3. Open Claude Desktop app and sign in"
+echo "  2. Run 'claude' in terminal to authenticate Claude Code CLI"
 echo ""
-echo "To sync configs: $SCRIPT_DIR/sync-rules.sh sync"
-echo "To check status: $SCRIPT_DIR/check.sh"
+echo "Useful commands:"
+echo "  $SCRIPT_DIR/sync-rules.sh sync  # Sync all configs"
+echo "  $SCRIPT_DIR/check.sh            # Verify setup"
