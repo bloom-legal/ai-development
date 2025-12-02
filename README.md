@@ -41,16 +41,17 @@ Pre-configured Model Context Protocol servers synced to Cursor, Claude Desktop, 
 
 ## Configuration
 
-MCP configs use environment variables for secrets:
+The install script prompts for secrets interactively:
 
-1. Copy `.env.example` to `.env`
-2. Fill in your values:
-   ```
-   POSTGRES_CONNECTION=user:pass@host:port/db
-   PORTAINER_SERVER=portainer.example.com
-   PORTAINER_TOKEN=your-token
-   ```
-3. Run `./sync-rules.sh mcp` to regenerate configs
+```
+Configure MCP server secrets (press Enter to skip/keep current):
+
+PostgreSQL connection [user:pass@host:port/db]:
+Portainer server hostname:
+Portainer API token:
+```
+
+Press Enter to skip any value. Re-run `./install.sh` anytime to update secrets.
 
 ## Commands
 

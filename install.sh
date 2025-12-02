@@ -125,25 +125,68 @@ MCP_TEMPLATE="$SCRIPT_DIR/template/.rulesync/mcp.json.template"
 MCP_OUTPUT="$SCRIPT_DIR/template/.rulesync/mcp.json"
 ENV_FILE="$SCRIPT_DIR/.env"
 
-if [ -f "$MCP_TEMPLATE" ]; then
-    # Load .env if it exists
-    if [ -f "$ENV_FILE" ]; then
-        set -a
-        source "$ENV_FILE"
-        set +a
-        log "Loaded configuration from .env"
-    else
-        warn "No .env file found - using default placeholders"
-        warn "Copy .env.example to .env and fill in your values"
-    fi
-
-    # Generate mcp.json from template using envsubst
-    envsubst < "$MCP_TEMPLATE" > "$MCP_OUTPUT"
-    log "Generated mcp.json from template"
-else
+if [ ! -f "$MCP_TEMPLATE" ]; then
     error "MCP template not found at $MCP_TEMPLATE"
     exit 1
 fi
+
+# Load existing .env if present
+if [ -f "$ENV_FILE" ]; then
+    set -a
+    source "$ENV_FILE"
+    set +a
+    log "Loaded existing configuration from .env"
+fi
+
+# Interactive prompts for secrets
+echo ""
+echo "Configure MCP server secrets (press Enter to skip/keep current):"
+echo ""
+
+# PostgreSQL
+current_pg="${POSTGRES_CONNECTION:-}"
+printf "PostgreSQL connection [user:pass@host:port/db]"
+[ -n "$current_pg" ] && printf " (current: %s)" "${current_pg:0:20}..."
+printf ": "
+read -r input_pg
+[ -n "$input_pg" ] && POSTGRES_CONNECTION="$input_pg"
+
+# Portainer Server
+current_server="${PORTAINER_SERVER:-}"
+printf "Portainer server hostname"
+[ -n "$current_server" ] && printf " (current: %s)" "$current_server"
+printf ": "
+read -r input_server
+[ -n "$input_server" ] && PORTAINER_SERVER="$input_server"
+
+# Portainer Token
+current_token="${PORTAINER_TOKEN:-}"
+printf "Portainer API token"
+[ -n "$current_token" ] && printf " (current: %s...)" "${current_token:0:10}"
+printf ": "
+read -r input_token
+[ -n "$input_token" ] && PORTAINER_TOKEN="$input_token"
+
+# Save to .env
+cat > "$ENV_FILE" << EOF
+# MCP Configuration - DO NOT COMMIT
+
+# PostgreSQL connection string
+POSTGRES_CONNECTION=${POSTGRES_CONNECTION:-}
+
+# Portainer configuration
+PORTAINER_SERVER=${PORTAINER_SERVER:-}
+PORTAINER_TOKEN=${PORTAINER_TOKEN:-}
+EOF
+
+log "Configuration saved to .env"
+
+# Export for envsubst
+export POSTGRES_CONNECTION PORTAINER_SERVER PORTAINER_TOKEN
+
+# Generate mcp.json from template using envsubst
+envsubst < "$MCP_TEMPLATE" > "$MCP_OUTPUT"
+log "Generated mcp.json from template"
 
 # 11. Run initial sync
 header "Initial Sync"
@@ -168,11 +211,10 @@ echo "  • Claude Code CLI"
 echo "  • MCP configs synced to all tools"
 echo ""
 echo "Next steps:"
-echo "  1. Copy .env.example to .env and add your secrets"
-echo "  2. Run ./install.sh again to regenerate MCP config"
-echo "  3. Open Cursor and sign in"
-echo "  4. Run 'claude' in terminal to authenticate Claude Code CLI"
+echo "  1. Open Cursor and sign in"
+echo "  2. Run 'claude' in terminal to authenticate Claude Code CLI"
 echo ""
 echo "Useful commands:"
-echo "  $SCRIPT_DIR/sync-rules.sh sync  # Sync all configs"
-echo "  $SCRIPT_DIR/check.sh            # Verify setup"
+echo "  $SCRIPT_DIR/install.sh           # Re-run to update secrets"
+echo "  $SCRIPT_DIR/sync-rules.sh mcp    # Sync MCP configs"
+echo "  $SCRIPT_DIR/check.sh             # Verify setup"
