@@ -28,6 +28,7 @@ done
 
 CURRENT=0
 TOTAL=${#ITEMS[@]}
+MIN_POS=-2  # -2=Deselect All, -1=Select All, 0+=items
 
 # Hide cursor
 tput civis
@@ -37,7 +38,23 @@ trap 'tput cnorm; echo' EXIT
 draw_menu() {
     clear
     echo -e "${BOLD}${R}=== Uninstall AI Development Environment ===${N}"
-    echo -e "${DIM}Use ↑↓ to navigate, Space to toggle, Enter to confirm, q to quit${N}"
+    echo -e "${DIM}↑↓ navigate | Space toggle | a=all | n=none | Enter confirm | q=quit${N}"
+    echo ""
+
+    # Select All option
+    if [ $CURRENT -eq -1 ]; then
+        echo -e " ${BOLD}> [${G}Select All${N}${BOLD}]${N}"
+    else
+        echo -e "   [${DIM}Select All${N}]"
+    fi
+
+    # Deselect All option
+    if [ $CURRENT -eq -2 ]; then
+        echo -e " ${BOLD}> [${R}Deselect All${N}${BOLD}]${N}"
+    else
+        echo -e "   [${DIM}Deselect All${N}]"
+    fi
+
     echo ""
 
     for i in "${!ITEMS[@]}"; do
@@ -79,7 +96,13 @@ draw_menu() {
 
 # Toggle current item
 toggle_current() {
-    if [ ${SELECTED[$CURRENT]} -eq 1 ]; then
+    if [ $CURRENT -eq -1 ]; then
+        # Select All
+        select_all 1
+    elif [ $CURRENT -eq -2 ]; then
+        # Deselect All
+        select_all 0
+    elif [ ${SELECTED[$CURRENT]} -eq 1 ]; then
         SELECTED[$CURRENT]=0
     else
         SELECTED[$CURRENT]=1
@@ -132,7 +155,7 @@ while true; do
 
     case "$key" in
         A|k) # Up arrow or k
-            ((CURRENT > 0)) && ((CURRENT--))
+            ((CURRENT > MIN_POS)) && ((CURRENT--))
             ;;
         B|j) # Down arrow or j
             ((CURRENT < TOTAL - 1)) && ((CURRENT++))
@@ -174,7 +197,7 @@ while true; do
         $'\x1b') # Escape sequence (arrow keys)
             read -rsn2 arrow
             case "$arrow" in
-                '[A') ((CURRENT > 0)) && ((CURRENT--)) ;;
+                '[A') ((CURRENT > MIN_POS)) && ((CURRENT--)) ;;
                 '[B') ((CURRENT < TOTAL - 1)) && ((CURRENT++)) ;;
             esac
             ;;
