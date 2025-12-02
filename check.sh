@@ -219,13 +219,6 @@ check_mcp_server "context7" "npx"
 check_mcp_server "docker-mcp" "uvx"
 check_mcp_server "puppeteer" "npx"
 
-# Check portainer-mcp specifically (local binary)
-if [ -f "$HOME/.local/bin/portainer-mcp" ]; then
-    ok "portainer-mcp binary exists"
-else
-    warn "portainer-mcp binary not found at ~/.local/bin/portainer-mcp"
-fi
-
 header "Summary"
 
 if [ $ERRORS -eq 0 ]; then
