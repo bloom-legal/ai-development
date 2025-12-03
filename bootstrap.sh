@@ -102,16 +102,16 @@ else
     touch /tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress
 
     # Find the package name (try multiple patterns)
-    PROD=$(softwareupdate -l 2>/dev/null | grep -E "Command Line Tools|CLTools" | grep -v "^$" | head -n 1 | sed 's/^[* ]*//' | sed 's/^ *//')
+    XCODE_PACKAGE_NAME=$(softwareupdate -l 2>/dev/null | grep -E "Command Line Tools|CLTools" | grep -v "^$" | head -n 1 | sed 's/^[* ]*//' | sed 's/^ *//')
 
-    if [[ -z "$PROD" ]]; then
+    if [[ -z "$XCODE_PACKAGE_NAME" ]]; then
         # Alternative: look for Label line
-        PROD=$(softwareupdate -l 2>/dev/null | grep -o "Command Line Tools for Xcode-[0-9.]*" | head -n 1)
+        XCODE_PACKAGE_NAME=$(softwareupdate -l 2>/dev/null | grep -o "Command Line Tools for Xcode-[0-9.]*" | head -n 1)
     fi
 
-    if [[ -n "$PROD" ]]; then
-        warn "Installing: $PROD"
-        softwareupdate -i "$PROD" --verbose 2>&1 || softwareupdate -i "$PROD" 2>&1 || {
+    if [[ -n "$XCODE_PACKAGE_NAME" ]]; then
+        warn "Installing: $XCODE_PACKAGE_NAME"
+        softwareupdate -i "$XCODE_PACKAGE_NAME" --verbose 2>&1 || softwareupdate -i "$XCODE_PACKAGE_NAME" 2>&1 || {
             warn "softwareupdate failed, trying xcode-select..."
         }
     fi

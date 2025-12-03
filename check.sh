@@ -10,9 +10,9 @@ source "$SCRIPT_DIR/scripts/bash/lib/common.sh"
 # Additional logging functions specific to check.sh
 ok() { echo -e "${COLOR_GREEN}✓${COLOR_RESET} $1"; }
 fail() { echo -e "${COLOR_RED}✗${COLOR_RESET} $1"; }
-TPL="$SCRIPT_DIR/template"
-FIX="${1:-}"
-ERRORS=0
+TEMPLATE_DIR="$SCRIPT_DIR/template"
+FIX_MODE="${1:-}"
+ERROR_COUNT=0
 
 # Global MCP config locations
 CURSOR_MCP="$HOME/.cursor/mcp.json"
@@ -20,7 +20,7 @@ CLAUDE_DESKTOP_MCP="$HOME/Library/Application Support/Claude/claude_desktop_conf
 ROO_MCP="$HOME/Library/Application Support/Cursor/User/globalStorage/rooveterinaryinc.roo-code-nightly/settings/mcp_settings.json"
 
 remediate() {
-    if [[ "$FIX" == "--fix" ]]; then
+    if [[ "$FIX_MODE" == "--fix" ]]; then
         return 0
     else
         return 1
@@ -34,7 +34,7 @@ if command -v brew &>/dev/null; then
     ok "Homebrew installed"
 else
     fail "Homebrew not installed"
-    ((ERRORS++))
+    ((ERROR_COUNT++))
     if remediate; then
         warn "Installing Homebrew..."
         /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
@@ -47,7 +47,7 @@ if command -v node &>/dev/null; then
     ok "Node.js installed ($(node --version))"
 else
     fail "Node.js not installed"
-    ((ERRORS++))
+    ((ERROR_COUNT++))
     if remediate; then
         warn "Installing Node.js..."
         brew install node
@@ -59,7 +59,7 @@ if command -v jq &>/dev/null; then
     ok "jq installed"
 else
     fail "jq not installed"
-    ((ERRORS++))
+    ((ERROR_COUNT++))
     if remediate; then
         warn "Installing jq..."
         brew install jq
@@ -71,7 +71,7 @@ if command -v uvx &>/dev/null; then
     ok "uvx installed"
 else
     fail "uvx not installed"
-    ((ERRORS++))
+    ((ERROR_COUNT++))
     if remediate; then
         warn "Installing uv..."
         brew install uv
@@ -85,7 +85,7 @@ if [ -d "/Applications/Visual Studio Code.app" ]; then
     ok "VS Code installed"
 else
     fail "VS Code not installed"
-    ((ERRORS++))
+    ((ERROR_COUNT++))
     if remediate; then
         warn "Installing VS Code..."
         brew install --cask visual-studio-code
@@ -97,7 +97,7 @@ if [ -d "/Applications/Cursor.app" ]; then
     ok "Cursor installed"
 else
     fail "Cursor not installed"
-    ((ERRORS++))
+    ((ERROR_COUNT++))
     if remediate; then
         warn "Installing Cursor..."
         brew install --cask cursor
@@ -109,7 +109,7 @@ if command -v claude &>/dev/null; then
     ok "Claude Code CLI installed"
 else
     fail "Claude Code CLI not installed"
-    ((ERRORS++))
+    ((ERROR_COUNT++))
     if remediate; then
         warn "Installing Claude Code..."
         npm install -g @anthropic-ai/claude-code
@@ -129,7 +129,7 @@ do
         ok "Directory exists: $(basename "$dir")"
     else
         fail "Directory missing: $dir"
-        ((ERRORS++))
+        ((ERROR_COUNT++))
         if remediate; then
             warn "Creating directory..."
             mkdir -p "$dir"
@@ -140,13 +140,13 @@ done
 header "MCP Template"
 
 # Check template exists
-if [ -f "$TPL/.rulesync/mcp.json.template" ]; then
+if [ -f "$TEMPLATE_DIR/.rulesync/mcp.json.template" ]; then
     ok "MCP template exists"
-    MCP_COUNT=$(jq '.mcpServers | keys | length' "$TPL/.rulesync/mcp.json.template" 2>/dev/null || echo 0)
+    MCP_COUNT=$(jq '.mcpServers | keys | length' "$TEMPLATE_DIR/.rulesync/mcp.json.template" 2>/dev/null || echo 0)
     ok "Template has $MCP_COUNT MCP servers"
 else
-    fail "MCP template not found at $TPL/.rulesync/mcp.json.template"
-    ((ERRORS++))
+    fail "MCP template not found at $TEMPLATE_DIR/.rulesync/mcp.json.template"
+    ((ERROR_COUNT++))
 fi
 
 # Check .env file
@@ -169,7 +169,7 @@ check_mcp_config() {
                 ok "$name: $count MCP servers"
             else
                 fail "$name: empty mcpServers"
-                ((ERRORS++))
+                ((ERROR_COUNT++))
                 if remediate; then
                     warn "Syncing MCPs..."
                     SKIP_PREFLIGHT=1 "$SCRIPT_DIR/sync-rules.sh" mcp
@@ -177,7 +177,7 @@ check_mcp_config() {
             fi
         else
             fail "$name: invalid format (no mcpServers key)"
-            ((ERRORS++))
+            ((ERROR_COUNT++))
             if remediate; then
                 warn "Syncing MCPs..."
                 SKIP_PREFLIGHT=1 "$SCRIPT_DIR/sync-rules.sh" mcp
@@ -185,7 +185,7 @@ check_mcp_config() {
         fi
     else
         fail "$name: config file missing"
-        ((ERRORS++))
+        ((ERROR_COUNT++))
         if remediate; then
             warn "Creating config..."
             mkdir -p "$(dirname "$path")"
@@ -234,12 +234,12 @@ fi
 
 header "Summary"
 
-if [ $ERRORS -eq 0 ]; then
+if [ $ERROR_COUNT -eq 0 ]; then
     echo -e "${COLOR_GREEN}All checks passed!${COLOR_RESET}"
     exit 0
 else
-    echo -e "${COLOR_RED}Found $ERRORS issue(s)${COLOR_RESET}"
-    if [[ "$FIX" != "--fix" ]]; then
+    echo -e "${COLOR_RED}Found $ERROR_COUNT issue(s)${COLOR_RESET}"
+    if [[ "$FIX_MODE" != "--fix" ]]; then
         echo ""
         echo "Run with --fix to attempt remediation:"
         echo "  $0 --fix"
