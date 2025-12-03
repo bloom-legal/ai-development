@@ -8,8 +8,10 @@ AGENTS.md
 # Environment files with secrets
 .env
 
-# Generated MCP config (contains secrets from .env)
+# Generated MCP configs (contain secrets and user-specific paths)
 template/.rulesync/mcp.json
+template/.mcp.json
+.rulesync/mcp.json
 
 # Logs
 logs/
