@@ -1,5 +1,5 @@
 #!/bin/bash
-# Sync SpecKit + SuperClaude + Rulesync across all projects
+# Sync modular building blocks across all projects
 # MCPs are synced to GLOBAL configs (Cursor, Claude Desktop, Roo Code)
 # Rules and commands are synced to per-project configs
 # Usage: ./sync-rules.sh [update|sync|init|mcp]
@@ -15,6 +15,180 @@ TEMPLATE_DIR="$SCRIPT_DIR/template"
 SKIP_PATTERN="global|_archives|^\."
 
 # MCP paths are defined in common.sh: CURSOR_MCP, CLAUDE_DESKTOP_MCP, ROO_MCP
+
+# ============================================================================
+# BUILDING BLOCK CONFIGURATION
+# ============================================================================
+# Enable/disable independent building blocks
+# Set to false to exclude a building block from sync operations
+
+ENABLE_SUPERCLAUDE=false  # SuperClaude commands (deprecated, being phased out)
+ENABLE_DIET103=true       # diet103 infrastructure (hooks + skills + agents)
+ENABLE_SPECKIT=true       # SpecKit templates and infrastructure
+ENABLE_CUSTOM=true        # Custom project-specific commands
+ENABLE_RULESYNC=true      # Rulesync rules and configuration
+
+# ============================================================================
+# MODULAR SYNC FUNCTIONS - Independent Building Blocks
+# ============================================================================
+
+# Sync SuperClaude commands
+# Commands synced from ~/.claude/commands/sc/ to template and projects
+sync_superclaude() {
+    [[ "$ENABLE_SUPERCLAUDE" != "true" ]] && return 0
+
+    [ ! -d "$HOME/.claude/commands/sc" ] && return 0
+
+    log "  Syncing SuperClaude commands..."
+    mkdir -p "$TEMPLATE_DIR/.rulesync/commands"
+    mkdir -p "$TEMPLATE_DIR/.claude/commands"
+
+    local count=0
+    for cmd in "$HOME/.claude/commands/sc/"*.md; do
+        [ -f "$cmd" ] || continue
+        local name
+        name=$(basename "$cmd")
+        [[ "$name" == "README.md" ]] && continue
+
+        # Convert from Claude Code format to Rulesync format
+        if grep -q "^name:" "$cmd" 2>/dev/null; then
+            local desc
+            desc=$(grep "^description:" "$cmd" | sed 's/^description: *//' | tr -d '"')
+            # Extract content after the second ---
+            awk '/^---$/{n++; next} n==2' "$cmd" | {
+                echo -e "---\ndescription: \"$desc\"\ntargets: [\"*\"]\n---"
+                cat
+            } > "$TEMPLATE_DIR/.rulesync/commands/$name"
+        else
+            cp -f "$cmd" "$TEMPLATE_DIR/.rulesync/commands/"
+        fi
+
+        # Also copy to .claude/commands for Claude Code direct access
+        cp -f "$cmd" "$TEMPLATE_DIR/.claude/commands/"
+        ((count++))
+    done
+
+    [ $count -gt 0 ] && log "    ✓ $count SuperClaude commands"
+}
+
+# Sync diet103 infrastructure
+# Includes hooks, skills, and diet103-specific configurations
+sync_diet103() {
+    [[ "$ENABLE_DIET103" != "true" ]] && return 0
+
+    local dir="$1"
+
+    # Sync hooks (auto-activation system)
+    if [ -d "$TEMPLATE_DIR/.claude/hooks" ]; then
+        mkdir -p "$dir/.claude/hooks"
+        cp -rf "$TEMPLATE_DIR/.claude/hooks/"* "$dir/.claude/hooks/" 2>/dev/null || true
+        chmod +x "$dir/.claude/hooks/"*.sh 2>/dev/null || true
+        # Install hook dependencies quietly
+        (cd "$dir/.claude/hooks" && npm install --silent 2>/dev/null) || true
+    fi
+
+    # Sync skills (production-tested patterns)
+    if [ -d "$TEMPLATE_DIR/.claude/skills" ]; then
+        mkdir -p "$dir/.claude/skills"
+        cp -rf "$TEMPLATE_DIR/.claude/skills/"* "$dir/.claude/skills/" 2>/dev/null || true
+    fi
+
+    # Sync agents (specialized helpers)
+    if [ -d "$TEMPLATE_DIR/.claude/agents" ]; then
+        mkdir -p "$dir/.claude/agents"
+        cp -rf "$TEMPLATE_DIR/.claude/agents/"* "$dir/.claude/agents/" 2>/dev/null || true
+    fi
+
+    # Sync skill-rules.json (activation configuration)
+    [ -f "$TEMPLATE_DIR/.claude/skill-rules.json" ] && \
+        cp -f "$TEMPLATE_DIR/.claude/skill-rules.json" "$dir/.claude/"
+
+    # Sync settings.json (hooks configuration)
+    [ -f "$TEMPLATE_DIR/.claude/settings.json" ] && \
+        cp -f "$TEMPLATE_DIR/.claude/settings.json" "$dir/.claude/"
+}
+
+# Sync SpecKit templates and infrastructure
+# Initializes and syncs SpecKit .specify directory
+sync_speckit() {
+    [[ "$ENABLE_SPECKIT" != "true" ]] && return 0
+
+    local dir="$1"
+
+    # Initialize SpecKit if not already initialized
+    if [ ! -f "$dir/.specify/scripts/bash/common.sh" ]; then
+        log "  Initializing SpecKit..."
+        (cd "$dir" && specify init --here --ai claude --force --no-git 2>/dev/null) || true
+    fi
+}
+
+# Sync custom project commands
+# Custom commands: custom-refactor.md, custom-upgrade.md, etc.
+sync_custom() {
+    [[ "$ENABLE_CUSTOM" != "true" ]] && return 0
+
+    local dir="$1"
+
+    # Copy custom commands from template
+    # Custom commands are identified by "custom-" prefix
+    local custom_commands=("custom-refactor.md" "custom-upgrade.md")
+    local count=0
+
+    for cmd in "${custom_commands[@]}"; do
+        # Copy to rulesync commands
+        if [ -f "$TEMPLATE_DIR/.rulesync/commands/$cmd" ]; then
+            cp -f "$TEMPLATE_DIR/.rulesync/commands/$cmd" "$dir/.rulesync/commands/" 2>/dev/null || true
+            ((count++))
+        fi
+
+        # Copy full version to .claude/commands for Claude Code
+        if [ -f "$TEMPLATE_DIR/.claude/commands/$cmd" ]; then
+            cp -f "$TEMPLATE_DIR/.claude/commands/$cmd" "$dir/.claude/commands/" 2>/dev/null || true
+        fi
+    done
+
+    [ $count -gt 0 ] && log "    ✓ $count custom commands"
+}
+
+# Sync rulesync rules and base configuration
+# Rules are shared prompts/context loaded by AI editors
+sync_rulesync() {
+    [[ "$ENABLE_RULESYNC" != "true" ]] && return 0
+
+    local dir="$1"
+
+    # Copy rulesync rules
+    if [ -d "$TEMPLATE_DIR/.rulesync/rules" ]; then
+        cp -f "$TEMPLATE_DIR/.rulesync/rules/"*.md "$dir/.rulesync/rules/" 2>/dev/null || true
+    fi
+
+    # Copy .aiignore
+    if [ -f "$TEMPLATE_DIR/.rulesync/.aiignore" ]; then
+        cp -f "$TEMPLATE_DIR/.rulesync/.aiignore" "$dir/.rulesync/"
+    fi
+}
+
+# Sync diet103 hooks
+# Git hooks and automation scripts
+sync_hooks() {
+    [[ "$ENABLE_DIET103" != "true" ]] && return 0
+    # Hooks are synced as part of sync_diet103()
+    # This function kept for modularity/future use
+    return 0
+}
+
+# Sync diet103 skills
+# AI-powered skills and capabilities
+sync_skills() {
+    [[ "$ENABLE_DIET103" != "true" ]] && return 0
+    # Skills are synced as part of sync_diet103()
+    # This function kept for modularity/future use
+    return 0
+}
+
+# ============================================================================
+# CORE FUNCTIONS
+# ============================================================================
 
 # Generate MCP config from template
 generate_mcp_config() {
@@ -73,34 +247,28 @@ sync_global_mcps() {
     log "MCPs synced to global configs ✓"
 }
 
-# Initialize SpecKit in a project
-init_speckit() {
-    local dir="$1"
-    if [ ! -f "$dir/.specify/scripts/bash/common.sh" ]; then
-        (cd "$dir" && specify init --here --ai claude --force --no-git 2>/dev/null) || true
-    fi
-}
-
-# Copy template files to project (SpecKit + Rulesync - NO MCP)
+# Copy template files to project using modular sync functions
 copy_template() {
     local dir="$1"
+
+    # Create base directory structure
     mkdir -p "$dir/.rulesync"/{rules,commands}
     mkdir -p "$dir/.claude/commands"
 
-    # Initialize SpecKit properly
-    init_speckit "$dir"
+    # Sync each building block independently
+    sync_speckit "$dir"        # SpecKit templates and infrastructure
+    sync_custom "$dir"         # Custom project commands
+    sync_rulesync "$dir"       # Rulesync rules and configuration
+    sync_diet103 "$dir"        # diet103 infrastructure (if enabled)
+    sync_hooks "$dir"          # diet103 hooks (if enabled)
+    sync_skills "$dir"         # diet103 skills (if enabled)
 
-    # Copy SpecKit commands to .claude/commands (for Claude Code)
-    [ -d "$TEMPLATE_DIR/.claude/commands" ] && cp -f "$TEMPLATE_DIR/.claude/commands/"*.md "$dir/.claude/commands/" 2>/dev/null || true
-
-    # Copy rulesync configs (rules and commands only - NO MCP)
-    cp -f "$TEMPLATE_DIR/.rulesync/rules/"*.md "$dir/.rulesync/rules/" 2>/dev/null || true
-    cp -f "$TEMPLATE_DIR/.rulesync/commands/"*.md "$dir/.rulesync/commands/" 2>/dev/null || true
-    [ -f "$TEMPLATE_DIR/.rulesync/.aiignore" ] && cp -f "$TEMPLATE_DIR/.rulesync/.aiignore" "$dir/.rulesync/"
-
-    # CRITICAL: Copy FULL commands directly to .claude/commands for Claude Code
-    # Rulesync's simulateCommands strips content, so we copy the full files directly
-    cp -f "$TEMPLATE_DIR/.rulesync/commands/"*.md "$dir/.claude/commands/" 2>/dev/null || true
+    # CRITICAL: Copy ALL enabled commands directly to .claude/commands for Claude Code
+    # Rulesync's simulateCommands strips content, so we copy full files directly
+    if [[ "$ENABLE_SUPERCLAUDE" == "true" ]] || [[ "$ENABLE_CUSTOM" == "true" ]]; then
+        [ -d "$TEMPLATE_DIR/.rulesync/commands" ] && \
+            cp -f "$TEMPLATE_DIR/.rulesync/commands/"*.md "$dir/.claude/commands/" 2>/dev/null || true
+    fi
 
     # Remove local MCP config if it exists (use global instead)
     rm -f "$dir/.rulesync/mcp.json" 2>/dev/null || true
@@ -133,30 +301,10 @@ update_config_remove_mcp() {
 
 # Update SuperClaude commands from Claude Code
 update_superclaude() {
-    [ ! -d "$HOME/.claude/commands/sc" ] && return
+    [[ "$ENABLE_SUPERCLAUDE" != "true" ]] && return 0
 
-    log "Syncing SuperClaude commands..."
-    mkdir -p "$TEMPLATE_DIR/.rulesync/commands"
-
-    for cmd in "$HOME/.claude/commands/sc/"*.md; do
-        [ -f "$cmd" ] || continue
-        local name
-        name=$(basename "$cmd")
-        [[ "$name" == "README.md" ]] && continue
-
-        if grep -q "^name:" "$cmd" 2>/dev/null; then
-            local desc
-            desc=$(grep "^description:" "$cmd" | sed 's/^description: *//' | tr -d '"')
-            # Extract content after the second ---
-            awk '/^---$/{n++; next} n==2' "$cmd" | {
-                echo -e "---\ndescription: \"$desc\"\ntargets: [\"*\"]\n---"
-                cat
-            } > "$TEMPLATE_DIR/.rulesync/commands/$name"
-        else
-            cp -f "$cmd" "$TEMPLATE_DIR/.rulesync/commands/"
-        fi
-    done
-    echo "  $(ls "$HOME/.claude/commands/sc/"*.md 2>/dev/null | wc -l | tr -d ' ') commands"
+    warn "Updating SuperClaude commands from ~/.claude/commands/sc/..."
+    sync_superclaude
 }
 
 # Remove local MCP configs from all projects
@@ -219,8 +367,23 @@ preflight_check() {
     fi
 }
 
-# Main
-header "=== Sync: SpecKit + SuperClaude + Rulesync ==="
+# ============================================================================
+# MAIN
+# ============================================================================
+
+# Display enabled building blocks
+display_building_blocks() {
+    header "Building Blocks Configuration:"
+    log "  SuperClaude:  $([ "$ENABLE_SUPERCLAUDE" = "true" ] && echo "ENABLED" || echo "DISABLED")"
+    log "  diet103:      $([ "$ENABLE_DIET103" = "true" ] && echo "ENABLED" || echo "DISABLED")"
+    log "  SpecKit:      $([ "$ENABLE_SPECKIT" = "true" ] && echo "ENABLED" || echo "DISABLED")"
+    log "  Custom:       $([ "$ENABLE_CUSTOM" = "true" ] && echo "ENABLED" || echo "DISABLED")"
+    log "  Rulesync:     $([ "$ENABLE_RULESYNC" = "true" ] && echo "ENABLED" || echo "DISABLED")"
+    echo ""
+}
+
+header "=== Sync: Modular Building Blocks ==="
+display_building_blocks
 
 action="${1:-sync}"
 
@@ -250,6 +413,9 @@ case "$action" in
         ;;
 
     sync|generate)
+        # Sync SuperClaude commands to template first (if enabled)
+        sync_superclaude
+
         # Sync MCPs to global configs
         sync_global_mcps
 
@@ -307,6 +473,14 @@ case "$action" in
         echo "  clean   - Remove local MCP configs from all projects"
         echo "  init    - Initialize new projects with rulesync"
         echo "  update  - Update tools and sync"
+        echo ""
+        echo "Building Blocks:"
+        echo "  Edit sync-rules.sh to enable/disable building blocks:"
+        echo "  - ENABLE_SUPERCLAUDE  : SuperClaude commands (deprecated)"
+        echo "  - ENABLE_DIET103      : diet103 infrastructure"
+        echo "  - ENABLE_SPECKIT      : SpecKit templates"
+        echo "  - ENABLE_CUSTOM       : Custom project commands"
+        echo "  - ENABLE_RULESYNC     : Rulesync rules"
         exit 1
         ;;
 esac

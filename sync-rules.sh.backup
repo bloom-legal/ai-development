@@ -1,0 +1,293 @@
+#!/bin/bash
+# Sync SpecKit + Rulesync across all projects
+# MCPs are synced to GLOBAL configs (Cursor, Claude Desktop, Roo Code)
+# Rules and commands are synced to per-project configs
+# Note: SuperClaude has been replaced by diet103 (see MIGRATION.md)
+# Usage: ./sync-rules.sh [update|sync|init|mcp]
+set -e
+
+# Load common functions
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/scripts/bash/lib/common.sh"
+
+# Config - derive paths from script location
+DEV_DIR="$(get_dev_folder)"
+TEMPLATE_DIR="$SCRIPT_DIR/template"
+SKIP_PATTERN="global|_archives|^\."
+
+# MCP paths are defined in common.sh: CURSOR_MCP, CLAUDE_DESKTOP_MCP, ROO_MCP
+
+# Generate MCP config from template
+generate_mcp_config() {
+    local template="$TEMPLATE_DIR/.rulesync/mcp.json.template"
+    local output="$TEMPLATE_DIR/.rulesync/mcp.json"
+    local env_file="$SCRIPT_DIR/.env"
+
+    [ ! -f "$template" ] && { warn "MCP template not found at $template"; return 1; }
+
+    # Load .env if it exists
+    if [ -f "$env_file" ]; then
+        set -a
+        source "$env_file"
+        set +a
+    fi
+
+    # Generate mcp.json from template
+    envsubst < "$template" > "$output"
+    log "Generated mcp.json from template"
+}
+
+# Sync MCPs to global configs
+sync_global_mcps() {
+    # Generate config from template first
+    generate_mcp_config || return 1
+
+    header "Syncing MCPs to global configs..."
+
+    local mcp_source="$TEMPLATE_DIR/.rulesync/mcp.json"
+    [ ! -f "$mcp_source" ] && { warn "No MCP source found at $mcp_source"; return 1; }
+
+    # 1. Cursor global - direct copy (same format)
+    log "  → Cursor: $CURSOR_MCP"
+    cp "$mcp_source" "$CURSOR_MCP"
+
+    # 2. Roo Code global - same format
+    log "  → Roo Code: $ROO_MCP"
+    mkdir -p "$(dirname "$ROO_MCP")"
+    cp "$mcp_source" "$ROO_MCP"
+
+    # 3. Claude Desktop - merge into existing config (preserves preferences)
+    log "  → Claude Desktop: $CLAUDE_DESKTOP_MCP"
+    if [ -f "$CLAUDE_DESKTOP_MCP" ]; then
+        # Merge mcpServers into existing config
+        local existing
+        existing=$(cat "$CLAUDE_DESKTOP_MCP")
+        local servers
+        servers=$(jq '.mcpServers' "$mcp_source")
+        echo "$existing" | jq --argjson servers "$servers" '.mcpServers = $servers' > "$CLAUDE_DESKTOP_MCP"
+    else
+        # Create new config
+        mkdir -p "$(dirname "$CLAUDE_DESKTOP_MCP")"
+        cp "$mcp_source" "$CLAUDE_DESKTOP_MCP"
+    fi
+
+    log "MCPs synced to global configs ✓"
+}
+
+# Initialize SpecKit in a project
+init_speckit() {
+    local dir="$1"
+    if [ ! -f "$dir/.specify/scripts/bash/common.sh" ]; then
+        (cd "$dir" && specify init --here --ai claude --force --no-git 2>/dev/null) || true
+    fi
+}
+
+# Copy template files to project (SpecKit + Rulesync - NO MCP)
+copy_template() {
+    local dir="$1"
+    mkdir -p "$dir/.rulesync"/{rules,commands}
+    mkdir -p "$dir/.claude/commands"
+
+    # Initialize SpecKit properly
+    init_speckit "$dir"
+
+    # Copy SpecKit commands to .claude/commands (for Claude Code)
+    [ -d "$TEMPLATE_DIR/.claude/commands" ] && cp -f "$TEMPLATE_DIR/.claude/commands/"*.md "$dir/.claude/commands/" 2>/dev/null || true
+
+    # Copy rulesync configs (rules and commands only - NO MCP)
+    cp -f "$TEMPLATE_DIR/.rulesync/rules/"*.md "$dir/.rulesync/rules/" 2>/dev/null || true
+    cp -f "$TEMPLATE_DIR/.rulesync/commands/"*.md "$dir/.rulesync/commands/" 2>/dev/null || true
+    [ -f "$TEMPLATE_DIR/.rulesync/.aiignore" ] && cp -f "$TEMPLATE_DIR/.rulesync/.aiignore" "$dir/.rulesync/"
+
+    # CRITICAL: Copy FULL commands directly to .claude/commands for Claude Code
+    # Rulesync's simulateCommands strips content, so we copy the full files directly
+    cp -f "$TEMPLATE_DIR/.rulesync/commands/"*.md "$dir/.claude/commands/" 2>/dev/null || true
+
+    # Remove local MCP config if it exists (use global instead)
+    rm -f "$dir/.rulesync/mcp.json" 2>/dev/null || true
+}
+
+# Create rulesync config (without MCP feature)
+create_config() {
+    cat > "$1/rulesync.jsonc" << 'EOF'
+{
+  "$schema": "https://raw.githubusercontent.com/dyoshikawa/rulesync/main/schema.json",
+  "targets": ["cursor", "roo"],
+  "features": ["rules", "ignore", "commands"],
+  "simulateCommands": true,
+  "delete": true
+}
+EOF
+}
+
+# Update rulesync config to remove MCP feature
+update_config_remove_mcp() {
+    local config="$1/rulesync.jsonc"
+    [ ! -f "$config" ] && return
+
+    # Remove "mcp" from features array using sed
+    if grep -q '"mcp"' "$config" 2>/dev/null; then
+        # Remove "mcp", from features or , "mcp"
+        sed -i '' 's/, *"mcp"//g; s/"mcp", *//g' "$config" 2>/dev/null || true
+    fi
+}
+
+# Update SuperClaude commands from Claude Code
+# DISABLED: SuperClaude has been replaced by diet103
+update_superclaude() {
+    # SuperClaude commands are no longer synced
+    # This function is disabled as part of diet103 migration
+    return 0
+}
+
+# Remove local MCP configs from all projects
+clean_local_mcps() {
+    header "Removing local MCP configs from projects..."
+    local count=0
+
+    for dir in "$DEV_DIR"/*/; do
+        name=$(basename "$dir")
+        [[ "$name" =~ $SKIP_PATTERN ]] && continue
+
+        # Remove .rulesync/mcp.json
+        if [ -f "$dir/.rulesync/mcp.json" ]; then
+            rm -f "$dir/.rulesync/mcp.json"
+            log "  Removed: $name/.rulesync/mcp.json"
+            ((count++))
+        fi
+
+        # Remove generated .cursor/mcp.json
+        if [ -f "$dir/.cursor/mcp.json" ]; then
+            rm -f "$dir/.cursor/mcp.json"
+            log "  Removed: $name/.cursor/mcp.json"
+        fi
+
+        # Remove generated .roo/mcp.json
+        if [ -f "$dir/.roo/mcp.json" ]; then
+            rm -f "$dir/.roo/mcp.json"
+            log "  Removed: $name/.roo/mcp.json"
+        fi
+
+        # Update rulesync.jsonc to remove mcp feature
+        update_config_remove_mcp "$dir"
+    done
+
+    log "Cleaned $count projects"
+}
+
+# Pre-flight check and remediation
+preflight_check() {
+    local check_script="$SCRIPT_DIR/check.sh"
+
+    if [ ! -f "$check_script" ]; then
+        warn "check.sh not found, skipping pre-flight check"
+        return 0
+    fi
+
+    header "Pre-flight check..."
+    if ! "$check_script" 2>/dev/null; then
+        warn "Issues detected, attempting remediation..."
+        "$check_script" --fix 2>/dev/null || true
+
+        # Verify fix worked
+        if ! "$check_script" 2>/dev/null; then
+            warn "Some issues remain, continuing anyway..."
+        else
+            log "Remediation successful"
+        fi
+    else
+        log "All checks passed"
+    fi
+}
+
+# Main
+header "=== Sync: SpecKit + Rulesync ==="
+
+action="${1:-sync}"
+
+# Run pre-flight check for sync operations (skip for mcp/clean/help to avoid loops)
+# mcp is excluded because check.sh calls sync-rules.sh mcp to remediate
+if [[ "$action" =~ ^(sync|generate|update)$ ]] && [[ -z "$SKIP_PATTERN_PREFLIGHT" ]]; then
+    preflight_check
+fi
+
+if [[ "$action" == "update" ]]; then
+    warn "Updating tools..."
+    npm update -g rulesync 2>/dev/null || true
+    update_superclaude
+    echo ""
+    action="sync"
+fi
+
+case "$action" in
+    mcp)
+        # Sync MCPs to global configs only
+        sync_global_mcps
+        ;;
+
+    clean)
+        # Remove local MCP configs
+        clean_local_mcps
+        ;;
+
+    sync|generate)
+        # Sync MCPs to global configs
+        sync_global_mcps
+
+        # Auto-init + sync rules/commands to ALL projects
+        count=0
+        init_count=0
+        for dir in "$DEV_DIR"/*/; do
+            name=$(basename "$dir")
+            [[ "$name" =~ $SKIP_PATTERN ]] && continue
+
+            # Auto-initialize if no rulesync.jsonc exists
+            if [ ! -f "$dir/rulesync.jsonc" ]; then
+                log "Init: $name"
+                copy_template "$dir"
+                create_config "$dir"
+                ((init_count++))
+            fi
+
+            log "$name"
+            copy_template "$dir"
+            update_config_remove_mcp "$dir"
+            (cd "$dir" && npx rulesync generate 2>/dev/null) || true
+            ((count++))
+        done
+
+        if [ $init_count -gt 0 ]; then
+            header "=== Done! $count projects synced ($init_count newly initialized) ==="
+        else
+            header "=== Done! $count projects synced ==="
+        fi
+        ;;
+
+    init)
+        count=0
+        for dir in "$DEV_DIR"/*/; do
+            name=$(basename "$dir")
+            [[ "$name" =~ $SKIP_PATTERN ]] && continue
+            [ -f "$dir/rulesync.jsonc" ] && continue
+
+            log "Init: $name"
+            copy_template "$dir"
+            create_config "$dir"
+            ((count++))
+        done
+
+        header "=== Done! $count projects initialized ==="
+        ;;
+
+    *)
+        echo "Usage: $0 [update|sync|init|mcp|clean]"
+        echo ""
+        echo "Commands:"
+        echo "  sync    - Sync MCPs to global + rules/commands to projects (default)"
+        echo "  mcp     - Sync MCPs to global configs only"
+        echo "  clean   - Remove local MCP configs from all projects"
+        echo "  init    - Initialize new projects with rulesync"
+        echo "  update  - Update tools and sync"
+        exit 1
+        ;;
+esac
