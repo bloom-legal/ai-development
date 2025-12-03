@@ -98,14 +98,14 @@ retry_command() {
 detect_dev_folder() {
     local home_dir="${1:-$HOME}"
     
-    # Pattern matches dev, development, developpement, développement (case-insensitive)
     for dir in "$home_dir"/*/; do
         [ -d "$dir" ] || continue
         local name=$(basename "$dir")
         local name_lower=$(echo "$name" | tr '[:upper:]' '[:lower:]')
-        # Also handle accented é -> e for développement
-        local name_normalized=$(echo "$name_lower" | sed 's/é/e/g')
+        # Remove accents: handle common French accents and normalize
+        local name_normalized=$(echo "$name_lower" | sed 's/[éèêë]/e/g; s/[àâä]/a/g; s/[ùûü]/u/g; s/[îï]/i/g; s/[ôö]/o/g; s/ç/c/g')
         
+        # Match: dev, development, developpement (after accent removal)
         if [[ "$name_normalized" =~ ^(dev|development|developpement)$ ]]; then
             echo "${dir%/}"
             return 0

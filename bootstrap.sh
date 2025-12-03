@@ -30,7 +30,8 @@ detect_dev_folder() {
         [ -d "$dir" ] || continue
         local name=$(basename "$dir")
         local name_lower=$(echo "$name" | tr '[:upper:]' '[:lower:]')
-        local name_normalized=$(echo "$name_lower" | sed 's/é/e/g')
+        # Remove accents: handle common French accents
+        local name_normalized=$(echo "$name_lower" | sed 's/[éèêë]/e/g; s/[àâä]/a/g; s/[ùûü]/u/g; s/[îï]/i/g; s/[ôö]/o/g; s/ç/c/g')
         
         if [[ "$name_normalized" =~ ^(dev|development|developpement)$ ]]; then
             echo "${dir%/}"
