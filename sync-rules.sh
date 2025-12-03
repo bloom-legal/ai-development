@@ -248,12 +248,20 @@ case "$action" in
         # Sync MCPs to global configs
         sync_global_mcps
 
-        # Sync rules/commands to projects (no MCP)
+        # Auto-init + sync rules/commands to ALL projects
         count=0
+        init_count=0
         for dir in "$DEV_DIR"/*/; do
             name=$(basename "$dir")
             [[ "$name" =~ $SKIP_PATTERN ]] && continue
-            [ ! -f "$dir/rulesync.jsonc" ] && continue
+
+            # Auto-initialize if no rulesync.jsonc exists
+            if [ ! -f "$dir/rulesync.jsonc" ]; then
+                log "Init: $name"
+                copy_template "$dir"
+                create_config "$dir"
+                ((init_count++))
+            fi
 
             log "$name"
             copy_template "$dir"
@@ -262,7 +270,11 @@ case "$action" in
             ((count++))
         done
 
-        header "=== Done! $count projects synced ==="
+        if [ $init_count -gt 0 ]; then
+            header "=== Done! $count projects synced ($init_count newly initialized) ==="
+        else
+            header "=== Done! $count projects synced ==="
+        fi
         ;;
 
     init)

@@ -263,7 +263,9 @@ if [ -d "$DEV_DIR" ]; then
                 warn "$name: has local MCP config (use global instead)"
             fi
         else
-            warn "$name: no rulesync.jsonc (run sync-rules.sh init)"
+            fail "$name: missing rulesync.jsonc (mandatory)"
+            ((PROJECT_ISSUES++))
+            ((ERROR_COUNT++))
         fi
     done
     

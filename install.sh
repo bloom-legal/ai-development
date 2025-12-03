@@ -295,6 +295,9 @@ EOF
     # Sync MCP configs to global locations
     SKIP_PREFLIGHT=1 "$SCRIPT_DIR/sync-rules.sh" mcp 2>/dev/null || warn "MCP sync had warnings"
 
+    # Sync rules to all projects (auto-initializes if needed)
+    SKIP_PREFLIGHT=1 "$SCRIPT_DIR/sync-rules.sh" sync 2>/dev/null || warn "Rules sync had warnings"
+
     # Copy Claude Code CLI commands
     if [ -d "$SCRIPT_DIR/template/.claude/commands" ]; then
         cp -f "$SCRIPT_DIR/template/.claude/commands/"*.md ~/.claude/commands/ 2>/dev/null || true
