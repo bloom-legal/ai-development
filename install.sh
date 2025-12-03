@@ -293,8 +293,14 @@ EOF
             "$MCP_TEMPLATE" > "$MCP_OUTPUT"
     fi
 
-    # Sync
+    # Sync MCP configs to global locations
     SKIP_PREFLIGHT=1 "$SCRIPT_DIR/sync-rules.sh" mcp 2>/dev/null || warn "MCP sync had warnings"
+
+    # Copy Claude Code CLI commands
+    if [ -d "$SCRIPT_DIR/template/.claude/commands" ]; then
+        cp -f "$SCRIPT_DIR/template/.claude/commands/"*.md ~/.claude/commands/ 2>/dev/null || true
+        log "Claude Code commands synced to ~/.claude/commands"
+    fi
 }
 
 # Execute installation
