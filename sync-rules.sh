@@ -98,6 +98,10 @@ copy_template() {
     cp -f "$TEMPLATE_DIR/.rulesync/commands/"*.md "$dir/.rulesync/commands/" 2>/dev/null || true
     [ -f "$TEMPLATE_DIR/.rulesync/.aiignore" ] && cp -f "$TEMPLATE_DIR/.rulesync/.aiignore" "$dir/.rulesync/"
 
+    # CRITICAL: Copy FULL commands directly to .claude/commands for Claude Code
+    # Rulesync's simulateCommands strips content, so we copy the full files directly
+    cp -f "$TEMPLATE_DIR/.rulesync/commands/"*.md "$dir/.claude/commands/" 2>/dev/null || true
+
     # Remove local MCP config if it exists (use global instead)
     rm -f "$dir/.rulesync/mcp.json" 2>/dev/null || true
 }
@@ -143,7 +147,8 @@ update_superclaude() {
         if grep -q "^name:" "$cmd" 2>/dev/null; then
             local desc
             desc=$(grep "^description:" "$cmd" | sed 's/^description: *//' | tr -d '"')
-            sed '1,/^---$/d' "$cmd" | sed '1,/^---$/d' | {
+            # Extract content after the second ---
+            awk '/^---$/{n++; next} n==2' "$cmd" | {
                 echo -e "---\ndescription: \"$desc\"\ntargets: [\"*\"]\n---"
                 cat
             } > "$TEMPLATE_DIR/.rulesync/commands/$name"
