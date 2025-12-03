@@ -9,9 +9,9 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/scripts/bash/lib/common.sh"
 
-# Config
-DEV="/Users/joachimbrindeau/Development"
-TPL="$DEV/global/template"
+# Config - derive paths from script location
+DEV="$(dirname "$SCRIPT_DIR")"
+TPL="$SCRIPT_DIR/template"
 SKIP="global|_archives|^\."
 
 # Global MCP config locations
