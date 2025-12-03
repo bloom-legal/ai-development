@@ -20,8 +20,9 @@ for arg in "$@"; do
             echo "Usage: ./install.sh [options]"
             echo ""
             echo "Options:"
-            echo "  --auto          Install all without interactive menu"
+            echo "  --auto          Install all without interactive menu (prompts for secrets)"
             echo "  --skip-secrets  Skip MCP secrets configuration"
+            echo "  --auto --skip-secrets  Fully non-interactive one-click install"
             echo "  --help          Show this help"
             exit 0
             ;;

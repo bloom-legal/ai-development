@@ -4,12 +4,12 @@ One-command setup for AI-assisted development on Mac. Installs and configures Cu
 
 ## Quick Start
 
-**Fresh Mac (one-liner):**
+**Fresh Mac (one-click, no prompts):**
 ```bash
 curl -fsSL https://raw.githubusercontent.com/bloom-legal/ai-development/main/bootstrap.sh | bash
 ```
 
-**Existing clone:**
+**Existing clone (interactive menu):**
 ```bash
 ./install.sh
 ```
@@ -41,27 +41,35 @@ Pre-configured Model Context Protocol servers synced to Cursor, Claude Desktop, 
 
 ## Configuration
 
-The install script prompts for secrets interactively:
+The bootstrap one-liner skips secrets configuration for a truly hands-free install. To configure MCP server secrets later, run the interactive installer:
+
+```bash
+./install.sh
+```
+
+This prompts for optional secrets:
 
 ```
-Configure MCP server secrets (press Enter to skip/keep current):
+Configure MCP server secrets (press Enter to skip, 's' to skip all):
 
 PostgreSQL connection [user:pass@host:port/db]:
 Portainer server hostname:
 Portainer API token:
 ```
 
-Press Enter to skip any value. Re-run `./install.sh` anytime to update secrets.
+Press Enter to skip any value. Re-run anytime to update secrets.
 
 ## Commands
 
 ```bash
-./install.sh          # Full installation (interactive)
-./uninstall.sh        # Interactive uninstall with checklist
-./check.sh            # Verify setup
-./check.sh --fix      # Auto-fix issues
-./sync-rules.sh mcp   # Sync MCP configs to all tools
-./sync-rules.sh sync  # Sync rules + commands to projects
+./install.sh                    # Interactive installation with menu
+./install.sh --auto             # Install all, prompt for secrets
+./install.sh --auto --skip-secrets  # Install all, no prompts (one-click)
+./uninstall.sh                  # Interactive uninstall with checklist
+./check.sh                      # Verify setup
+./check.sh --fix                # Auto-fix issues
+./sync-rules.sh mcp             # Sync MCP configs to all tools
+./sync-rules.sh sync            # Sync rules + commands to projects
 ```
 
 ## File Structure
