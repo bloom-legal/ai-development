@@ -49,9 +49,6 @@ sync_global_mcps() {
     local mcp_source="$TPL/.rulesync/mcp.json"
     [ ! -f "$mcp_source" ] && { warn "No MCP source found at $mcp_source"; return 1; }
 
-    # Read mcpServers from template
-    local mcp_servers=$(cat "$mcp_source")
-
     # 1. Cursor global - direct copy (same format)
     log "  → Cursor: $CURSOR_MCP"
     cp "$mcp_source" "$CURSOR_MCP"
@@ -65,8 +62,10 @@ sync_global_mcps() {
     log "  → Claude Desktop: $CLAUDE_DESKTOP_MCP"
     if [ -f "$CLAUDE_DESKTOP_MCP" ]; then
         # Merge mcpServers into existing config
-        local existing=$(cat "$CLAUDE_DESKTOP_MCP")
-        local servers=$(cat "$mcp_source" | jq '.mcpServers')
+        local existing
+        existing=$(cat "$CLAUDE_DESKTOP_MCP")
+        local servers
+        servers=$(jq '.mcpServers' "$mcp_source")
         echo "$existing" | jq --argjson servers "$servers" '.mcpServers = $servers' > "$CLAUDE_DESKTOP_MCP"
     else
         # Create new config
@@ -140,11 +139,13 @@ update_superclaude() {
 
     for cmd in "$HOME/.claude/commands/sc/"*.md; do
         [ -f "$cmd" ] || continue
-        local name=$(basename "$cmd")
+        local name
+        name=$(basename "$cmd")
         [[ "$name" == "README.md" ]] && continue
 
         if grep -q "^name:" "$cmd" 2>/dev/null; then
-            local desc=$(grep "^description:" "$cmd" | sed 's/^description: *//' | tr -d '"')
+            local desc
+            desc=$(grep "^description:" "$cmd" | sed 's/^description: *//' | tr -d '"')
             sed '1,/^---$/d' "$cmd" | sed '1,/^---$/d' | {
                 echo -e "---\ndescription: \"$desc\"\ntargets: [\"*\"]\n---"
                 cat

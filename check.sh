@@ -164,7 +164,8 @@ check_mcp_config() {
 
     if [ -f "$path" ]; then
         if jq -e '.mcpServers' "$path" &>/dev/null; then
-            local count=$(jq '.mcpServers | keys | length' "$path" 2>/dev/null || echo 0)
+            local count
+            count=$(jq '.mcpServers | keys | length' "$path" 2>/dev/null || echo 0)
             if [ "$count" -gt 0 ]; then
                 ok "$name: $count MCP servers"
             else

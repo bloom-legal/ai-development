@@ -81,7 +81,7 @@ retry_command() {
     local max_attempts="${3:-3}"
     local attempt=1
 
-    while [ $attempt -le $max_attempts ]; do
+    while [ "$attempt" -le "$max_attempts" ]; do
         if eval "$cmd"; then
             return 0
         fi
@@ -102,10 +102,13 @@ detect_dev_folder() {
     # First, check for existing dev folders
     for dir in "$home_dir"/*/; do
         [ -d "$dir" ] || continue
-        local name=$(basename "$dir")
-        local name_lower=$(echo "$name" | tr '[:upper:]' '[:lower:]')
+        local name
+        name=$(basename "$dir")
+        local name_lower
+        name_lower=$(echo "$name" | tr '[:upper:]' '[:lower:]')
         # Remove accents: handle common French accents
-        local name_normalized=$(echo "$name_lower" | sed 's/[éèêë]/e/g; s/[àâä]/a/g; s/[ùûü]/u/g; s/[îï]/i/g; s/[ôö]/o/g; s/ç/c/g')
+        local name_normalized
+        name_normalized=$(echo "$name_lower" | sed 's/[éèêë]/e/g; s/[àâä]/a/g; s/[ùûü]/u/g; s/[îï]/i/g; s/[ôö]/o/g; s/ç/c/g')
         
         # Match: dev, development, developpement (after accent removal)
         if [[ "$name_normalized" =~ ^(dev|development|developpement)$ ]]; then
@@ -115,7 +118,8 @@ detect_dev_folder() {
     done
     
     # No existing folder found - return locale-appropriate default (don't create it)
-    local locale=$(defaults read -g AppleLocale 2>/dev/null || echo "en_US")
+    local locale
+    locale=$(defaults read -g AppleLocale 2>/dev/null || echo "en_US")
     if [[ "$locale" =~ ^fr ]]; then
         echo "$home_dir/Développement"
     else
