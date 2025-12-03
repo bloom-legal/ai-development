@@ -137,5 +137,10 @@ get_dev_folder() {
     echo "$DEV_FOLDER"
 }
 
+# Global MCP config locations
+CURSOR_MCP="$HOME/.cursor/mcp.json"
+CLAUDE_DESKTOP_MCP="$HOME/Library/Application Support/Claude/claude_desktop_config.json"
+ROO_MCP="$HOME/Library/Application Support/Cursor/User/globalStorage/rooveterinaryinc.roo-code-nightly/settings/mcp_settings.json"
+
 # Initialize colors on load
 init_colors
