@@ -60,6 +60,15 @@
       "type": "stdio",
       "command": "npx",
       "args": ["-y", "chrome-devtools-mcp"]
+    },
+    "github": {
+      "description": "GitHub - repos, issues, PRs, branches, commits, code search",
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "$GITHUB_TOKEN"
+      }
     }
   }
 }
