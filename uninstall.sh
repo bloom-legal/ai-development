@@ -3,19 +3,14 @@
 # Navigate with arrow keys, space to toggle, enter to confirm
 set -e
 
+# Load common functions
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-
-# Colors (with fallback for non-color terminals)
-if [[ -t 1 ]] && [[ "${TERM:-}" != "dumb" ]]; then
-    R='\033[0;31m' G='\033[0;32m' Y='\033[1;33m' B='\033[0;34m' N='\033[0m'
-    DIM='\033[2m' BOLD='\033[1m'
-else
-    R='' G='' Y='' B='' N='' DIM='' BOLD=''
-fi
+source "$SCRIPT_DIR/scripts/bash/lib/common.sh"
 
 # Check if terminal supports TUI
-TUI_SUPPORTED=true
-if [[ ! -t 0 ]] || [[ ! -t 1 ]] || ! command -v tput &>/dev/null; then
+if check_tui_support; then
+    TUI_SUPPORTED=true
+else
     TUI_SUPPORTED=false
 fi
 
@@ -42,40 +37,29 @@ CURRENT=0
 TOTAL=${#ITEMS[@]}
 MIN_POS=-2  # -2=Deselect All, -1=Select All, 0+=items
 
-# Hide cursor (with error handling)
-hide_cursor() {
-    if $TUI_SUPPORTED; then
-        tput civis 2>/dev/null || true
-    fi
-}
-
-show_cursor() {
-    if $TUI_SUPPORTED; then
-        tput cnorm 2>/dev/null || true
-    fi
-}
+# Use cursor functions from common library
 
 trap 'show_cursor; echo' EXIT
 
 # Draw the menu
 draw_menu() {
     clear
-    echo -e "${BOLD}${R}=== Uninstall AI Development Environment ===${N}"
-    echo -e "${DIM}↑↓ navigate | Space toggle | a=all | n=none | Enter confirm | q=quit${N}"
+    echo -e "${COLOR_BOLD}${COLOR_RED}=== Uninstall AI Development Environment ===${COLOR_RESET}"
+    echo -e "${COLOR_DIM}↑↓ navigate | Space toggle | a=all | n=none | Enter confirm | q=quit${COLOR_RESET}"
     echo ""
 
     # Select All option
     if [ $CURRENT -eq -1 ]; then
-        echo -e " ${BOLD}> [${G}Select All${N}${BOLD}]${N}"
+        echo -e " ${COLOR_BOLD}> [${COLOR_GREEN}Select All${COLOR_RESET}${COLOR_BOLD}]${COLOR_RESET}"
     else
-        echo -e "   [${DIM}Select All${N}]"
+        echo -e "   [${COLOR_DIM}Select All${COLOR_RESET}]"
     fi
 
     # Deselect All option
     if [ $CURRENT -eq -2 ]; then
-        echo -e " ${BOLD}> [${R}Deselect All${N}${BOLD}]${N}"
+        echo -e " ${COLOR_BOLD}> [${COLOR_RED}Deselect All${COLOR_RESET}${COLOR_BOLD}]${COLOR_RESET}"
     else
-        echo -e "   [${DIM}Deselect All${N}]"
+        echo -e "   [${COLOR_DIM}Deselect All${COLOR_RESET}]"
     fi
 
     echo ""
@@ -86,7 +70,7 @@ draw_menu() {
         # Cursor indicator
         if [ $i -eq $CURRENT ]; then
             cursor=">"
-            line_color="${BOLD}"
+            line_color="${COLOR_BOLD}"
         else
             cursor=" "
             line_color=""
@@ -94,12 +78,12 @@ draw_menu() {
 
         # Checkbox
         if [ ${SELECTED[$i]} -eq 1 ]; then
-            checkbox="${R}[x]${N}"
+            checkbox="${COLOR_RED}[x]${COLOR_RESET}"
         else
             checkbox="[ ]"
         fi
 
-        echo -e " ${line_color}${cursor} ${checkbox} ${name}${N} ${DIM}- ${desc}${N}"
+        echo -e " ${line_color}${cursor} ${checkbox} ${name}${COLOR_RESET} ${COLOR_DIM}- ${desc}${COLOR_RESET}"
     done
 
     echo ""
@@ -111,9 +95,9 @@ draw_menu() {
     done
 
     if [ $count -gt 0 ]; then
-        echo -e "${Y}$count item(s) selected for removal${N}"
+        echo -e "${COLOR_YELLOW}$count item(s) selected for removal${COLOR_RESET}"
     else
-        echo -e "${DIM}No items selected${N}"
+        echo -e "${COLOR_DIM}No items selected${COLOR_RESET}"
     fi
 }
 
@@ -143,7 +127,7 @@ select_all() {
 # Execute uninstall
 do_uninstall() {
     clear
-    echo -e "${BOLD}${R}=== Uninstalling ===${N}"
+    echo -e "${COLOR_BOLD}${COLOR_RED}=== Uninstalling ===${COLOR_RESET}"
     echo ""
 
     local any_selected=0
@@ -151,17 +135,17 @@ do_uninstall() {
         if [ ${SELECTED[$i]} -eq 1 ]; then
             any_selected=1
             IFS='|' read -r name cmd desc <<< "${ITEMS[$i]}"
-            echo -e "${Y}Removing: ${name}...${N}"
-            eval "$cmd" 2>/dev/null || echo -e "${DIM}  (already removed or failed)${N}"
-            echo -e "${G}✓ ${name} removed${N}"
+            echo -e "${COLOR_YELLOW}Removing: ${name}...${COLOR_RESET}"
+            eval "$cmd" 2>/dev/null || echo -e "${COLOR_DIM}  (already removed or failed)${COLOR_RESET}"
+            echo -e "${COLOR_GREEN}✓ ${name} removed${COLOR_RESET}"
             echo ""
         fi
     done
 
     if [ $any_selected -eq 0 ]; then
-        echo -e "${DIM}Nothing selected to uninstall${N}"
+        echo -e "${COLOR_DIM}Nothing selected to uninstall${COLOR_RESET}"
     else
-        echo -e "${G}${BOLD}Uninstall complete!${N}"
+        echo -e "${COLOR_GREEN}${COLOR_BOLD}Uninstall complete!${COLOR_RESET}"
     fi
 
     echo ""
@@ -171,7 +155,7 @@ do_uninstall() {
 
 # Non-interactive list mode
 run_list_mode() {
-    echo -e "${BOLD}${R}=== Uninstall AI Development Environment ===${N}"
+    echo -e "${COLOR_BOLD}${COLOR_RED}=== Uninstall AI Development Environment ===${COLOR_RESET}"
     echo ""
     echo "Installed components:"
     echo ""
@@ -218,7 +202,7 @@ while true; do
             ;;
         q) # Quit
             echo ""
-            echo -e "${DIM}Cancelled${N}"
+            echo -e "${COLOR_DIM}Cancelled${COLOR_RESET}"
             exit 0
             ;;
         '') # Enter - confirm
@@ -234,7 +218,7 @@ while true; do
 
             # Confirm
             echo ""
-            echo -e "${R}${BOLD}Are you sure you want to uninstall $any item(s)? [y/N]${N} "
+            echo -e "${COLOR_RED}${COLOR_BOLD}Are you sure you want to uninstall $any item(s)? [y/N]${COLOR_RESET} "
             read -rsn1 confirm
             if [[ "$confirm" =~ ^[Yy]$ ]]; then
                 do_uninstall

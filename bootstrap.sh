@@ -3,39 +3,51 @@
 # Run with: curl -fsSL https://raw.githubusercontent.com/bloom-legal/ai-development/main/bootstrap.sh | bash
 set -e
 
-# Colors (with fallback for non-color terminals)
-if [[ -t 1 ]] && [[ "${TERM:-}" != "dumb" ]]; then
-    G='\033[0;32m' R='\033[0;31m' Y='\033[1;33m' B='\033[0;34m' N='\033[0m'
+# Load common functions (if available, otherwise define minimal versions)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd || pwd)"
+if [[ -f "$SCRIPT_DIR/scripts/bash/lib/common.sh" ]]; then
+    source "$SCRIPT_DIR/scripts/bash/lib/common.sh"
 else
-    G='' R='' Y='' B='' N=''
+    # Fallback minimal definitions for curl | bash execution
+    init_colors() {
+        if [[ -t 1 ]] && [[ "${TERM:-}" != "dumb" ]]; then
+            export COLOR_GREEN='\033[0;32m' COLOR_RED='\033[0;31m' COLOR_YELLOW='\033[1;33m'
+            export COLOR_BLUE='\033[0;34m' COLOR_RESET='\033[0m'
+        else
+            export COLOR_GREEN='' COLOR_RED='' COLOR_YELLOW='' COLOR_BLUE='' COLOR_RESET=''
+        fi
+    }
+    log() { echo -e "${COLOR_GREEN}✓ $1${COLOR_RESET}"; }
+    warn() { echo -e "${COLOR_YELLOW}⚠ $1${COLOR_RESET}"; }
+    error() { echo -e "${COLOR_RED}✗ $1${COLOR_RESET}"; exit 1; }
+    header() { echo -e "\n${COLOR_BLUE}=== $1 ===${COLOR_RESET}"; }
+    init_colors
 fi
-
-log() { echo -e "${G}✓ $1${N}"; }
-warn() { echo -e "${Y}⚠ $1${N}"; }
-error() { echo -e "${R}✗ $1${N}"; exit 1; }
-header() { echo -e "\n${B}=== $1 ===${N}"; }
 
 # Config
 REPO_URL="https://github.com/bloom-legal/ai-development.git"
 INSTALL_DIR="$HOME/Development/global"
 MAX_RETRIES=3
 
-# Retry function for network operations
-retry() {
-    local cmd="$1"
-    local desc="$2"
-    local attempt=1
+# Use retry_command from common.sh if available, otherwise define it
+if ! command -v retry_command &>/dev/null; then
+    retry_command() {
+        local cmd="$1"
+        local desc="$2"
+        local max_attempts="${3:-3}"
+        local attempt=1
 
-    while [ $attempt -le $MAX_RETRIES ]; do
-        if eval "$cmd"; then
-            return 0
-        fi
-        warn "Attempt $attempt/$MAX_RETRIES failed: $desc"
-        ((attempt++))
-        sleep 2
-    done
-    error "Failed after $MAX_RETRIES attempts: $desc"
-}
+        while [ $attempt -le $max_attempts ]; do
+            if eval "$cmd"; then
+                return 0
+            fi
+            warn "Attempt $attempt/$max_attempts failed: $desc"
+            ((attempt++))
+            sleep 2
+        done
+        error "Failed after $max_attempts attempts: $desc"
+    }
+fi
 
 header "AI Development Bootstrap"
 echo "This will set up your Mac for AI-assisted development."
@@ -133,8 +145,10 @@ fi
 # 2. Install Homebrew
 header "Homebrew"
 
-# Function to setup brew PATH
-setup_brew_path() {
+# Setup brew PATH (use common function if available)
+if command -v setup_brew_path &>/dev/null; then
+    setup_brew_path
+else
     if [[ -f /opt/homebrew/bin/brew ]]; then
         eval "$(/opt/homebrew/bin/brew shellenv)"
         export PATH="/opt/homebrew/bin:$PATH"
@@ -142,15 +156,13 @@ setup_brew_path() {
         eval "$(/usr/local/bin/brew shellenv)"
         export PATH="/usr/local/bin:$PATH"
     fi
-}
-
-setup_brew_path
+fi
 
 if command -v brew &>/dev/null; then
     log "Homebrew already installed"
 else
     warn "Installing Homebrew..."
-    retry 'NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"' "Homebrew installation"
+    retry_command 'NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"' "Homebrew installation" "$MAX_RETRIES"
 
     # Add to PATH for this session and future sessions
     if [[ -f /opt/homebrew/bin/brew ]]; then
@@ -168,8 +180,18 @@ else
     fi
 fi
 
-# Ensure brew is in PATH for this session
-setup_brew_path
+    # Ensure brew is in PATH for this session
+    if command -v setup_brew_path &>/dev/null; then
+        setup_brew_path
+    else
+        if [[ -f /opt/homebrew/bin/brew ]]; then
+            eval "$(/opt/homebrew/bin/brew shellenv)"
+            export PATH="/opt/homebrew/bin:$PATH"
+        elif [[ -f /usr/local/bin/brew ]]; then
+            eval "$(/usr/local/bin/brew shellenv)"
+            export PATH="/usr/local/bin:$PATH"
+        fi
+    fi
 
 if ! command -v brew &>/dev/null; then
     error "Homebrew not in PATH after installation. Please restart terminal and re-run."
@@ -181,7 +203,7 @@ if command -v git &>/dev/null; then
     log "Git already installed ($(git --version | cut -d' ' -f3))"
 else
     warn "Installing Git..."
-    retry 'brew install git' "Git installation"
+    retry_command 'brew install git' "Git installation" "$MAX_RETRIES"
     log "Git installed"
 fi
 
@@ -205,7 +227,7 @@ if [ -d "$INSTALL_DIR" ]; then
     fi
 else
     warn "Cloning repository..."
-    retry "git clone '$REPO_URL' '$INSTALL_DIR'" "Repository clone"
+    retry_command "git clone '$REPO_URL' '$INSTALL_DIR'" "Repository clone" "$MAX_RETRIES"
     log "Repository cloned to $INSTALL_DIR"
 fi
 

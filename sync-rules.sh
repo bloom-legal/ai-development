@@ -5,6 +5,10 @@
 # Usage: ./sync-rules.sh [update|sync|init|mcp]
 set -e
 
+# Load common functions
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/scripts/bash/lib/common.sh"
+
 # Config
 DEV="/Users/joachimbrindeau/Development"
 TPL="$DEV/global/template"
@@ -14,13 +18,6 @@ SKIP="global|_archives|^\."
 CURSOR_MCP="$HOME/.cursor/mcp.json"
 CLAUDE_DESKTOP_MCP="$HOME/Library/Application Support/Claude/claude_desktop_config.json"
 ROO_MCP="$HOME/Library/Application Support/Cursor/User/globalStorage/rooveterinaryinc.roo-code-nightly/settings/mcp_settings.json"
-
-# Colors
-G='\033[0;32m' Y='\033[1;33m' B='\033[0;34m' C='\033[0;36m' N='\033[0m'
-
-log() { echo -e "${G}$1${N}"; }
-warn() { echo -e "${Y}$1${N}"; }
-header() { echo -e "${B}$1${N}"; }
 
 # Generate MCP config from template
 generate_mcp_config() {
@@ -218,9 +215,6 @@ preflight_check() {
         log "All checks passed"
     fi
 }
-
-# Get script directory
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Main
 header "=== Sync: SpecKit + SuperClaude + Rulesync ==="

@@ -3,14 +3,13 @@
 # Usage: ./check.sh [--fix]
 set -e
 
-# Colors
-G='\033[0;32m' R='\033[0;31m' Y='\033[1;33m' B='\033[0;34m' N='\033[0m'
-ok() { echo -e "${G}✓${N} $1"; }
-fail() { echo -e "${R}✗${N} $1"; }
-warn() { echo -e "${Y}⚠${N} $1"; }
-header() { echo -e "\n${B}=== $1 ===${N}"; }
-
+# Load common functions
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/scripts/bash/lib/common.sh"
+
+# Additional logging functions specific to check.sh
+ok() { echo -e "${COLOR_GREEN}✓${COLOR_RESET} $1"; }
+fail() { echo -e "${COLOR_RED}✗${COLOR_RESET} $1"; }
 TPL="$SCRIPT_DIR/template"
 FIX="${1:-}"
 ERRORS=0
@@ -236,10 +235,10 @@ fi
 header "Summary"
 
 if [ $ERRORS -eq 0 ]; then
-    echo -e "${G}All checks passed!${N}"
+    echo -e "${COLOR_GREEN}All checks passed!${COLOR_RESET}"
     exit 0
 else
-    echo -e "${R}Found $ERRORS issue(s)${N}"
+    echo -e "${COLOR_RED}Found $ERRORS issue(s)${COLOR_RESET}"
     if [[ "$FIX" != "--fix" ]]; then
         echo ""
         echo "Run with --fix to attempt remediation:"

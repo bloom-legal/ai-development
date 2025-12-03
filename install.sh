@@ -4,7 +4,10 @@
 # Use --auto flag to install all without menu (still prompts for MCP secrets)
 set -e
 
+# Load common functions
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/scripts/bash/lib/common.sh"
+
 AUTO_MODE=false
 SKIP_SECRETS=false
 
@@ -25,35 +28,14 @@ for arg in "$@"; do
     esac
 done
 
-# Colors (with fallback for non-color terminals)
-if [[ -t 1 ]] && [[ "${TERM:-}" != "dumb" ]]; then
-    R='\033[0;31m' G='\033[0;32m' Y='\033[1;33m' B='\033[0;34m' N='\033[0m'
-    DIM='\033[2m' BOLD='\033[1m'
-else
-    R='' G='' Y='' B='' N='' DIM='' BOLD=''
-fi
-
-log() { echo -e "${G}✓ $1${N}"; }
-warn() { echo -e "${Y}⚠ $1${N}"; }
-error() { echo -e "${R}✗ $1${N}"; }
-
 # Check if terminal supports TUI
-TUI_SUPPORTED=true
-if [[ ! -t 0 ]] || [[ ! -t 1 ]] || ! command -v tput &>/dev/null; then
+if check_tui_support; then
+    TUI_SUPPORTED=true
+else
     TUI_SUPPORTED=false
 fi
 
 # Setup brew PATH
-setup_brew_path() {
-    if [[ -f /opt/homebrew/bin/brew ]]; then
-        eval "$(/opt/homebrew/bin/brew shellenv)"
-        export PATH="/opt/homebrew/bin:$PATH"
-    elif [[ -f /usr/local/bin/brew ]]; then
-        eval "$(/usr/local/bin/brew shellenv)"
-        export PATH="/usr/local/bin:$PATH"
-    fi
-}
-
 setup_brew_path
 
 # Items: "name|check_cmd|install_cmd|description"
@@ -97,18 +79,7 @@ CURRENT=0
 TOTAL=${#ITEMS[@]}
 MIN_POS=-2
 
-# Hide cursor (with error handling)
-hide_cursor() {
-    if $TUI_SUPPORTED; then
-        tput civis 2>/dev/null || true
-    fi
-}
-
-show_cursor() {
-    if $TUI_SUPPORTED; then
-        tput cnorm 2>/dev/null || true
-    fi
-}
+# Use cursor functions from common library
 
 trap 'show_cursor; echo' EXIT
 
@@ -119,22 +90,22 @@ draw_menu() {
     fi
 
     clear 2>/dev/null || printf '\033[2J\033[H'
-    echo -e "${BOLD}${G}=== Install AI Development Environment ===${N}"
-    echo -e "${DIM}↑↓ navigate | Space toggle | a=all | n=none | Enter confirm | q=quit${N}"
+    echo -e "${COLOR_BOLD}${COLOR_GREEN}=== Install AI Development Environment ===${COLOR_RESET}"
+    echo -e "${COLOR_DIM}↑↓ navigate | Space toggle | a=all | n=none | Enter confirm | q=quit${COLOR_RESET}"
     echo ""
 
     # Select All option
     if [ $CURRENT -eq -1 ]; then
-        echo -e " ${BOLD}> [${G}Select All${N}${BOLD}]${N}"
+        echo -e " ${COLOR_BOLD}> [${COLOR_GREEN}Select All${COLOR_RESET}${COLOR_BOLD}]${COLOR_RESET}"
     else
-        echo -e "   [${DIM}Select All${N}]"
+        echo -e "   [${COLOR_DIM}Select All${COLOR_RESET}]"
     fi
 
     # Deselect All option
     if [ $CURRENT -eq -2 ]; then
-        echo -e " ${BOLD}> [${R}Deselect All${N}${BOLD}]${N}"
+        echo -e " ${COLOR_BOLD}> [${COLOR_RED}Deselect All${COLOR_RESET}${COLOR_BOLD}]${COLOR_RESET}"
     else
-        echo -e "   [${DIM}Deselect All${N}]"
+        echo -e "   [${COLOR_DIM}Deselect All${COLOR_RESET}]"
     fi
 
     echo ""
@@ -145,7 +116,7 @@ draw_menu() {
         # Cursor indicator
         if [ $i -eq $CURRENT ]; then
             cursor=">"
-            line_color="${BOLD}"
+            line_color="${COLOR_BOLD}"
         else
             cursor=" "
             line_color=""
@@ -153,17 +124,17 @@ draw_menu() {
 
         # Checkbox and status
         if [ ${INSTALLED[$i]} -eq 1 ]; then
-            checkbox="${G}[✓]${N}"
-            status="${DIM}(installed)${N}"
+            checkbox="${COLOR_GREEN}[✓]${COLOR_RESET}"
+            status="${COLOR_DIM}(installed)${COLOR_RESET}"
         elif [ ${SELECTED[$i]} -eq 1 ]; then
-            checkbox="${Y}[x]${N}"
+            checkbox="${COLOR_YELLOW}[x]${COLOR_RESET}"
             status=""
         else
             checkbox="[ ]"
             status=""
         fi
 
-        echo -e " ${line_color}${cursor} ${checkbox} ${name}${N} ${DIM}- ${desc}${N} ${status}"
+        echo -e " ${line_color}${cursor} ${checkbox} ${name}${COLOR_RESET} ${COLOR_DIM}- ${desc}${COLOR_RESET} ${status}"
     done
 
     echo ""
@@ -177,9 +148,9 @@ draw_menu() {
     done
 
     if [ $count -gt 0 ]; then
-        echo -e "${Y}$count item(s) selected for installation${N}"
+        echo -e "${COLOR_YELLOW}$count item(s) selected for installation${COLOR_RESET}"
     else
-        echo -e "${G}Everything is already installed!${N}"
+        echo -e "${COLOR_GREEN}Everything is already installed!${COLOR_RESET}"
     fi
 }
 
@@ -251,7 +222,7 @@ configure_mcp() {
     # Only prompt for secrets if not skipped
     if ! $SKIP_SECRETS; then
         echo ""
-        echo -e "${B}Configure MCP server secrets (press Enter to skip, 's' to skip all):${N}"
+        echo -e "${COLOR_BLUE}Configure MCP server secrets (press Enter to skip, 's' to skip all):${COLOR_RESET}"
         echo ""
 
         # PostgreSQL
@@ -329,7 +300,7 @@ EOF
 do_install() {
     show_cursor
     clear 2>/dev/null || printf '\033[2J\033[H'
-    echo -e "${BOLD}${G}=== Installing ===${N}"
+    echo -e "${COLOR_BOLD}${COLOR_GREEN}=== Installing ===${COLOR_RESET}"
     echo ""
 
     local any_selected=0
@@ -337,7 +308,7 @@ do_install() {
         if [ ${SELECTED[$i]} -eq 1 ] && [ ${INSTALLED[$i]} -eq 0 ]; then
             any_selected=1
             IFS='|' read -r name check_cmd install_cmd desc <<< "${ITEMS[$i]}"
-            echo -e "${Y}Installing: ${name}...${N}"
+            echo -e "${COLOR_YELLOW}Installing: ${name}...${COLOR_RESET}"
 
             if [[ "$install_cmd" == "INSTALL_BREW" ]]; then
                 install_brew || warn "Homebrew installation had issues"
@@ -351,31 +322,31 @@ do_install() {
             setup_brew_path
             hash -r 2>/dev/null || true
 
-            echo -e "${G}✓ ${name} done${N}"
+            echo -e "${COLOR_GREEN}✓ ${name} done${COLOR_RESET}"
             echo ""
         fi
     done
 
     if [ $any_selected -eq 0 ]; then
-        echo -e "${G}Nothing to install - everything is already set up!${N}"
+        echo -e "${COLOR_GREEN}Nothing to install - everything is already set up!${COLOR_RESET}"
     else
         # Run verification
-        echo -e "${B}Verifying installation...${N}"
+        echo -e "${COLOR_BLUE}Verifying installation...${COLOR_RESET}"
         echo ""
 
         local errors=0
-        command -v brew &>/dev/null && echo -e "${G}✓${N} Homebrew" || { echo -e "${R}✗${N} Homebrew"; ((errors++)) || true; }
-        command -v git &>/dev/null && echo -e "${G}✓${N} Git" || { echo -e "${R}✗${N} Git"; ((errors++)) || true; }
-        command -v node &>/dev/null && echo -e "${G}✓${N} Node.js" || { echo -e "${R}✗${N} Node.js"; ((errors++)) || true; }
-        command -v claude &>/dev/null && echo -e "${G}✓${N} Claude Code CLI" || { echo -e "${Y}⚠${N} Claude Code CLI (restart terminal)"; }
-        [ -d "/Applications/Cursor.app" ] && echo -e "${G}✓${N} Cursor" || { echo -e "${R}✗${N} Cursor"; ((errors++)) || true; }
-        [ -f ~/.cursor/mcp.json ] && echo -e "${G}✓${N} MCP Configs" || { echo -e "${Y}⚠${N} MCP Configs"; }
+        command -v brew &>/dev/null && echo -e "${COLOR_GREEN}✓${COLOR_RESET} Homebrew" || { echo -e "${COLOR_RED}✗${COLOR_RESET} Homebrew"; ((errors++)) || true; }
+        command -v git &>/dev/null && echo -e "${COLOR_GREEN}✓${COLOR_RESET} Git" || { echo -e "${COLOR_RED}✗${COLOR_RESET} Git"; ((errors++)) || true; }
+        command -v node &>/dev/null && echo -e "${COLOR_GREEN}✓${COLOR_RESET} Node.js" || { echo -e "${COLOR_RED}✗${COLOR_RESET} Node.js"; ((errors++)) || true; }
+        command -v claude &>/dev/null && echo -e "${COLOR_GREEN}✓${COLOR_RESET} Claude Code CLI" || { echo -e "${COLOR_YELLOW}⚠${COLOR_RESET} Claude Code CLI (restart terminal)"; }
+        [ -d "/Applications/Cursor.app" ] && echo -e "${COLOR_GREEN}✓${COLOR_RESET} Cursor" || { echo -e "${COLOR_RED}✗${COLOR_RESET} Cursor"; ((errors++)) || true; }
+        [ -f ~/.cursor/mcp.json ] && echo -e "${COLOR_GREEN}✓${COLOR_RESET} MCP Configs" || { echo -e "${COLOR_YELLOW}⚠${COLOR_RESET} MCP Configs"; }
 
         echo ""
         if [ $errors -eq 0 ]; then
-            echo -e "${G}${BOLD}Installation complete!${N}"
+            echo -e "${COLOR_GREEN}${COLOR_BOLD}Installation complete!${COLOR_RESET}"
         else
-            echo -e "${Y}Installation complete with $errors warning(s)${N}"
+            echo -e "${COLOR_YELLOW}Installation complete with $errors warning(s)${COLOR_RESET}"
         fi
         echo ""
         echo "Next steps:"
@@ -401,7 +372,7 @@ run_non_interactive() {
     for i in "${!ITEMS[@]}"; do
         if [ ${INSTALLED[$i]} -eq 0 ]; then
             IFS='|' read -r name check_cmd install_cmd desc <<< "${ITEMS[$i]}"
-            echo -e "${Y}Installing: ${name}...${N}"
+            echo -e "${COLOR_YELLOW}Installing: ${name}...${COLOR_RESET}"
 
             if [[ "$install_cmd" == "INSTALL_BREW" ]]; then
                 install_brew || warn "Homebrew installation had issues"
@@ -414,11 +385,11 @@ run_non_interactive() {
 
             setup_brew_path
             hash -r 2>/dev/null || true
-            echo -e "${G}✓ ${name} done${N}"
+            echo -e "${COLOR_GREEN}✓ ${name} done${COLOR_RESET}"
             echo ""
         else
             IFS='|' read -r name check_cmd install_cmd desc <<< "${ITEMS[$i]}"
-            echo -e "${G}✓ ${name} already installed${N}"
+            echo -e "${COLOR_GREEN}✓ ${name} already installed${COLOR_RESET}"
         fi
     done
 
@@ -429,7 +400,7 @@ run_non_interactive() {
 
 # Auto mode: install all without menu
 run_auto_mode() {
-    echo -e "${BOLD}${G}=== Install AI Development Environment ===${N}"
+    echo -e "${COLOR_BOLD}${COLOR_GREEN}=== Install AI Development Environment ===${COLOR_RESET}"
     echo ""
 
     # Select all uninstalled items
@@ -469,7 +440,7 @@ while true; do
         n) select_all 0 ;;
         q)
             echo ""
-            echo -e "${DIM}Cancelled${N}"
+            echo -e "${COLOR_DIM}Cancelled${COLOR_RESET}"
             exit 0
             ;;
         '')
@@ -486,7 +457,7 @@ while true; do
             fi
 
             echo ""
-            echo -e "${G}Install $count item(s)? [Y/n]${N} "
+            echo -e "${COLOR_GREEN}Install $count item(s)? [Y/n]${COLOR_RESET} "
             read -rsn1 confirm || confirm="y"
             if [[ ! "$confirm" =~ ^[Nn]$ ]]; then
                 do_install
