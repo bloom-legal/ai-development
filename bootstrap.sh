@@ -239,6 +239,10 @@ chmod +x install.sh check.sh sync-rules.sh uninstall.sh 2>/dev/null || true
 # Run install in fully automatic mode (no prompts at all)
 ./install.sh --auto --skip-secrets
 
+# Run full environment check
+header "Verifying Setup"
+./check.sh || true
+
 header "Bootstrap Complete!"
 echo ""
 echo "Your AI development environment is ready."
