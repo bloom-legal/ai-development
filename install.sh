@@ -211,7 +211,7 @@ configure_mcp() {
     mkdir -p ~/.claude/commands 2>/dev/null || true
     mkdir -p ~/Library/Application\ Support/Claude 2>/dev/null || true
     mkdir -p ~/Library/Application\ Support/Cursor/User/globalStorage/rooveterinaryinc.roo-code-nightly/settings 2>/dev/null || true
-    mkdir -p ~/Development 2>/dev/null || true
+    mkdir -p "$(get_dev_folder)" 2>/dev/null || true
 
     # Load existing .env
     if [ -f "$ENV_FILE" ]; then

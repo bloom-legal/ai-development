@@ -10,7 +10,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/scripts/bash/lib/common.sh"
 
 # Config - derive paths from script location
-DEV="$(dirname "$SCRIPT_DIR")"
+DEV="$(get_dev_folder)"
 TPL="$SCRIPT_DIR/template"
 SKIP="global|_archives|^\."
 

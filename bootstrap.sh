@@ -24,9 +24,26 @@ else
     init_colors
 fi
 
+# Detect dev folder (inline version for bootstrap)
+detect_dev_folder() {
+    for dir in "$HOME"/*/; do
+        [ -d "$dir" ] || continue
+        local name=$(basename "$dir")
+        local name_lower=$(echo "$name" | tr '[:upper:]' '[:lower:]')
+        local name_normalized=$(echo "$name_lower" | sed 's/é/e/g')
+        
+        if [[ "$name_normalized" =~ ^(dev|development|developpement)$ ]]; then
+            echo "${dir%/}"
+            return 0
+        fi
+    done
+    echo "$HOME/Development"
+}
+
 # Config
 REPO_URL="https://github.com/bloom-legal/ai-development.git"
-INSTALL_DIR="$HOME/Development/global"
+DEV_FOLDER="$(detect_dev_folder)"
+INSTALL_DIR="$DEV_FOLDER/global"
 MAX_RETRIES=3
 
 # Use retry_command from common.sh if available, otherwise define it
@@ -214,7 +231,7 @@ fi
 
 # 4. Clone the repository
 header "Repository"
-mkdir -p "$HOME/Development"
+mkdir -p "$DEV_FOLDER"
 
 if [ -d "$INSTALL_DIR" ]; then
     log "Repository already exists at $INSTALL_DIR"

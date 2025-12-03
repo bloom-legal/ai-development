@@ -93,5 +93,38 @@ retry_command() {
     return 1
 }
 
+# Detect development folder in home directory
+# Matches: Development, development, developpement, développement, dev (case-insensitive)
+detect_dev_folder() {
+    local home_dir="${1:-$HOME}"
+    
+    # Pattern matches dev, development, developpement, développement (case-insensitive)
+    for dir in "$home_dir"/*/; do
+        [ -d "$dir" ] || continue
+        local name=$(basename "$dir")
+        local name_lower=$(echo "$name" | tr '[:upper:]' '[:lower:]')
+        # Also handle accented é -> e for développement
+        local name_normalized=$(echo "$name_lower" | sed 's/é/e/g')
+        
+        if [[ "$name_normalized" =~ ^(dev|development|developpement)$ ]]; then
+            echo "${dir%/}"
+            return 0
+        fi
+    done
+    
+    # Fallback to ~/Development if nothing found
+    echo "$home_dir/Development"
+    return 1
+}
+
+# Get the dev folder (cached for performance)
+get_dev_folder() {
+    if [ -z "${DEV_FOLDER:-}" ]; then
+        DEV_FOLDER=$(detect_dev_folder)
+        export DEV_FOLDER
+    fi
+    echo "$DEV_FOLDER"
+}
+
 # Initialize colors on load
 init_colors

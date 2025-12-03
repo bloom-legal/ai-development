@@ -24,7 +24,7 @@ ITEMS=(
     "uv|brew uninstall uv|Python package manager"
     "MCP Configs|rm -f ~/.cursor/mcp.json \"$HOME/Library/Application Support/Claude/claude_desktop_config.json\" \"$HOME/Library/Application Support/Cursor/User/globalStorage/rooveterinaryinc.roo-code-nightly/settings/mcp_settings.json\"|Global MCP configurations"
     "Claude Commands|rm -rf ~/.claude/commands|Claude Code custom commands"
-    "This Repository|rm -rf ~/Development/global|AI development scripts"
+    "This Repository|rm -rf \"$(get_dev_folder)/global\"|AI development scripts"
 )
 
 # Selection state (1=selected, 0=not selected)
