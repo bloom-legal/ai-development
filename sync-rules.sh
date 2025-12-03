@@ -7,6 +7,7 @@ set -e
 
 # Load common functions
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=scripts/bash/lib/common.sh
 source "$SCRIPT_DIR/scripts/bash/lib/common.sh"
 
 # Config - derive paths from script location
