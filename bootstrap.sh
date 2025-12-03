@@ -30,10 +30,13 @@ detect_dev_folder() {
     # First, check for existing dev folders
     for dir in "$HOME"/*/; do
         [ -d "$dir" ] || continue
-        local name=$(basename "$dir")
-        local name_lower=$(echo "$name" | tr '[:upper:]' '[:lower:]')
+        local name
+        name=$(basename "$dir")
+        local name_lower
+        name_lower=$(echo "$name" | tr '[:upper:]' '[:lower:]')
         # Remove accents: handle common French accents
-        local name_normalized=$(echo "$name_lower" | sed 's/[éèêë]/e/g; s/[àâä]/a/g; s/[ùûü]/u/g; s/[îï]/i/g; s/[ôö]/o/g; s/ç/c/g')
+        local name_normalized
+        name_normalized=$(echo "$name_lower" | sed 's/[éèêë]/e/g; s/[àâä]/a/g; s/[ùûü]/u/g; s/[îï]/i/g; s/[ôö]/o/g; s/ç/c/g')
         
         if [[ "$name_normalized" =~ ^(dev|development|developpement)$ ]]; then
             echo "${dir%/}"
@@ -42,7 +45,8 @@ detect_dev_folder() {
     done
     
     # No existing folder found - create locale-appropriate default
-    local locale=$(defaults read -g AppleLocale 2>/dev/null || echo "en_US")
+    local locale
+    locale=$(defaults read -g AppleLocale 2>/dev/null || echo "en_US")
     if [[ "$locale" =~ ^fr ]]; then
         echo "$HOME/Développement"
     else
@@ -151,7 +155,7 @@ else
         warn "Waiting for Xcode CLI tools installation (this may take a few minutes)..."
 
         # Wait up to 10 minutes for installation
-        for i in {1..120}; do
+        for _ in {1..120}; do
             if xcode-select -p &>/dev/null; then
                 break
             fi
