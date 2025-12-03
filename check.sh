@@ -234,7 +234,7 @@ fi
 
 header "Development Projects"
 
-DEV_DIR="$(dirname "$SCRIPT_DIR")"
+DEV_DIR="$(get_dev_folder)"
 SKIP_PATTERN="global|_archives|^\."
 PROJECT_COUNT=0
 PROJECT_ISSUES=0
