@@ -10,19 +10,16 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/scripts/bash/lib/common.sh"
 
 # Config - derive paths from script location
-DEV="$(get_dev_folder)"
-TPL="$SCRIPT_DIR/template"
-SKIP="global|_archives|^\."
+DEV_DIR="$(get_dev_folder)"
+TEMPLATE_DIR="$SCRIPT_DIR/template"
+SKIP_PATTERN="global|_archives|^\."
 
-# Global MCP config locations
-CURSOR_MCP="$HOME/.cursor/mcp.json"
-CLAUDE_DESKTOP_MCP="$HOME/Library/Application Support/Claude/claude_desktop_config.json"
-ROO_MCP="$HOME/Library/Application Support/Cursor/User/globalStorage/rooveterinaryinc.roo-code-nightly/settings/mcp_settings.json"
+# MCP paths are defined in common.sh: CURSOR_MCP, CLAUDE_DESKTOP_MCP, ROO_MCP
 
 # Generate MCP config from template
 generate_mcp_config() {
-    local template="$TPL/.rulesync/mcp.json.template"
-    local output="$TPL/.rulesync/mcp.json"
+    local template="$TEMPLATE_DIR/.rulesync/mcp.json.template"
+    local output="$TEMPLATE_DIR/.rulesync/mcp.json"
     local env_file="$SCRIPT_DIR/.env"
 
     [ ! -f "$template" ] && { warn "MCP template not found at $template"; return 1; }
@@ -46,11 +43,8 @@ sync_global_mcps() {
 
     header "Syncing MCPs to global configs..."
 
-    local mcp_source="$TPL/.rulesync/mcp.json"
+    local mcp_source="$TEMPLATE_DIR/.rulesync/mcp.json"
     [ ! -f "$mcp_source" ] && { warn "No MCP source found at $mcp_source"; return 1; }
-
-    # Read mcpServers from template
-    local mcp_servers=$(cat "$mcp_source")
 
     # 1. Cursor global - direct copy (same format)
     log "  → Cursor: $CURSOR_MCP"
@@ -65,8 +59,10 @@ sync_global_mcps() {
     log "  → Claude Desktop: $CLAUDE_DESKTOP_MCP"
     if [ -f "$CLAUDE_DESKTOP_MCP" ]; then
         # Merge mcpServers into existing config
-        local existing=$(cat "$CLAUDE_DESKTOP_MCP")
-        local servers=$(cat "$mcp_source" | jq '.mcpServers')
+        local existing
+        existing=$(cat "$CLAUDE_DESKTOP_MCP")
+        local servers
+        servers=$(jq '.mcpServers' "$mcp_source")
         echo "$existing" | jq --argjson servers "$servers" '.mcpServers = $servers' > "$CLAUDE_DESKTOP_MCP"
     else
         # Create new config
@@ -95,12 +91,12 @@ copy_template() {
     init_speckit "$dir"
 
     # Copy SpecKit commands to .claude/commands (for Claude Code)
-    [ -d "$TPL/.claude/commands" ] && cp -f "$TPL/.claude/commands/"*.md "$dir/.claude/commands/" 2>/dev/null || true
+    [ -d "$TEMPLATE_DIR/.claude/commands" ] && cp -f "$TEMPLATE_DIR/.claude/commands/"*.md "$dir/.claude/commands/" 2>/dev/null || true
 
     # Copy rulesync configs (rules and commands only - NO MCP)
-    cp -f "$TPL/.rulesync/rules/"*.md "$dir/.rulesync/rules/" 2>/dev/null || true
-    cp -f "$TPL/.rulesync/commands/"*.md "$dir/.rulesync/commands/" 2>/dev/null || true
-    [ -f "$TPL/.rulesync/.aiignore" ] && cp -f "$TPL/.rulesync/.aiignore" "$dir/.rulesync/"
+    cp -f "$TEMPLATE_DIR/.rulesync/rules/"*.md "$dir/.rulesync/rules/" 2>/dev/null || true
+    cp -f "$TEMPLATE_DIR/.rulesync/commands/"*.md "$dir/.rulesync/commands/" 2>/dev/null || true
+    [ -f "$TEMPLATE_DIR/.rulesync/.aiignore" ] && cp -f "$TEMPLATE_DIR/.rulesync/.aiignore" "$dir/.rulesync/"
 
     # Remove local MCP config if it exists (use global instead)
     rm -f "$dir/.rulesync/mcp.json" 2>/dev/null || true
@@ -136,21 +132,23 @@ update_superclaude() {
     [ ! -d "$HOME/.claude/commands/sc" ] && return
 
     log "Syncing SuperClaude commands..."
-    mkdir -p "$TPL/.rulesync/commands"
+    mkdir -p "$TEMPLATE_DIR/.rulesync/commands"
 
     for cmd in "$HOME/.claude/commands/sc/"*.md; do
         [ -f "$cmd" ] || continue
-        local name=$(basename "$cmd")
+        local name
+        name=$(basename "$cmd")
         [[ "$name" == "README.md" ]] && continue
 
         if grep -q "^name:" "$cmd" 2>/dev/null; then
-            local desc=$(grep "^description:" "$cmd" | sed 's/^description: *//' | tr -d '"')
+            local desc
+            desc=$(grep "^description:" "$cmd" | sed 's/^description: *//' | tr -d '"')
             sed '1,/^---$/d' "$cmd" | sed '1,/^---$/d' | {
                 echo -e "---\ndescription: \"$desc\"\ntargets: [\"*\"]\n---"
                 cat
-            } > "$TPL/.rulesync/commands/$name"
+            } > "$TEMPLATE_DIR/.rulesync/commands/$name"
         else
-            cp -f "$cmd" "$TPL/.rulesync/commands/"
+            cp -f "$cmd" "$TEMPLATE_DIR/.rulesync/commands/"
         fi
     done
     echo "  $(ls "$HOME/.claude/commands/sc/"*.md 2>/dev/null | wc -l | tr -d ' ') commands"
@@ -161,9 +159,9 @@ clean_local_mcps() {
     header "Removing local MCP configs from projects..."
     local count=0
 
-    for dir in "$DEV"/*/; do
+    for dir in "$DEV_DIR"/*/; do
         name=$(basename "$dir")
-        [[ "$name" =~ $SKIP ]] && continue
+        [[ "$name" =~ $SKIP_PATTERN ]] && continue
 
         # Remove .rulesync/mcp.json
         if [ -f "$dir/.rulesync/mcp.json" ]; then
@@ -223,7 +221,7 @@ action="${1:-sync}"
 
 # Run pre-flight check for sync operations (skip for mcp/clean/help to avoid loops)
 # mcp is excluded because check.sh calls sync-rules.sh mcp to remediate
-if [[ "$action" =~ ^(sync|generate|update)$ ]] && [[ -z "$SKIP_PREFLIGHT" ]]; then
+if [[ "$action" =~ ^(sync|generate|update)$ ]] && [[ -z "$SKIP_PATTERN_PREFLIGHT" ]]; then
     preflight_check
 fi
 
@@ -252,9 +250,9 @@ case "$action" in
 
         # Sync rules/commands to projects (no MCP)
         count=0
-        for dir in "$DEV"/*/; do
+        for dir in "$DEV_DIR"/*/; do
             name=$(basename "$dir")
-            [[ "$name" =~ $SKIP ]] && continue
+            [[ "$name" =~ $SKIP_PATTERN ]] && continue
             [ ! -f "$dir/rulesync.jsonc" ] && continue
 
             log "$name"
@@ -269,9 +267,9 @@ case "$action" in
 
     init)
         count=0
-        for dir in "$DEV"/*/; do
+        for dir in "$DEV_DIR"/*/; do
             name=$(basename "$dir")
-            [[ "$name" =~ $SKIP ]] && continue
+            [[ "$name" =~ $SKIP_PATTERN ]] && continue
             [ -f "$dir/rulesync.jsonc" ] && continue
 
             log "Init: $name"
