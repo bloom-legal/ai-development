@@ -232,6 +232,59 @@ else
     warn "portainer-mcp binary not found (optional - install if using Portainer)"
 fi
 
+header "Development Projects"
+
+DEV_DIR="$(dirname "$SCRIPT_DIR")"
+SKIP_PATTERN="global|_archives|^\."
+PROJECT_COUNT=0
+PROJECT_ISSUES=0
+
+if [ -d "$DEV_DIR" ]; then
+    ok "Development directory: $DEV_DIR"
+    
+    for dir in "$DEV_DIR"/*/; do
+        [ ! -d "$dir" ] && continue
+        name=$(basename "$dir")
+        [[ "$name" =~ $SKIP_PATTERN ]] && continue
+        
+        ((PROJECT_COUNT++))
+        
+        # Check if project has rulesync
+        if [ -f "$dir/rulesync.jsonc" ]; then
+            # Check for .cursor/rules
+            if [ -d "$dir/.cursor/rules" ] && [ "$(ls -A "$dir/.cursor/rules" 2>/dev/null)" ]; then
+                ok "$name: rulesync configured"
+            else
+                fail "$name: missing .cursor/rules (run sync-rules.sh sync)"
+                ((PROJECT_ISSUES++))
+                ((ERROR_COUNT++))
+            fi
+            
+            # Warn about local MCP configs (should use global)
+            if [ -f "$dir/.cursor/mcp.json" ] || [ -f "$dir/.rulesync/mcp.json" ]; then
+                warn "$name: has local MCP config (use global instead)"
+            fi
+        else
+            warn "$name: no rulesync.jsonc (run sync-rules.sh init)"
+        fi
+    done
+    
+    if [ $PROJECT_COUNT -eq 0 ]; then
+        warn "No projects found in $DEV_DIR"
+    else
+        echo ""
+        log "$PROJECT_COUNT project(s) found, $PROJECT_ISSUES with issues"
+        
+        if [ $PROJECT_ISSUES -gt 0 ] && remediate; then
+            warn "Syncing projects..."
+            SKIP_PREFLIGHT=1 "$SCRIPT_DIR/sync-rules.sh" sync 2>/dev/null || true
+        fi
+    fi
+else
+    fail "Development directory not found: $DEV_DIR"
+    ((ERROR_COUNT++))
+fi
+
 header "Summary"
 
 if [ $ERROR_COUNT -eq 0 ]; then
