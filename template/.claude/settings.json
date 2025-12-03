@@ -5,9 +5,19 @@
       "Write:*",
       "MultiEdit:*",
       "NotebookEdit:*",
-      "Bash:*"
+      "Bash:*",
+      "Read:*",
+      "Glob:*",
+      "Grep:*",
+      "Task:*",
+      "WebSearch:*",
+      "WebFetch:*",
+      "TodoWrite:*",
+      "Skill:*",
+      "SlashCommand:*",
+      "mcp__*"
     ],
-    "defaultMode": "acceptEdits"
+    "defaultMode": "bypassPermissions"
   },
   "hooks": {
     "UserPromptSubmit": [
