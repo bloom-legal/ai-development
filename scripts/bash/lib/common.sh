@@ -95,14 +95,16 @@ retry_command() {
 
 # Detect development folder in home directory
 # Matches: Development, development, developpement, développement, dev (case-insensitive)
+# Returns existing folder if found, or locale-appropriate default
 detect_dev_folder() {
     local home_dir="${1:-$HOME}"
     
+    # First, check for existing dev folders
     for dir in "$home_dir"/*/; do
         [ -d "$dir" ] || continue
         local name=$(basename "$dir")
         local name_lower=$(echo "$name" | tr '[:upper:]' '[:lower:]')
-        # Remove accents: handle common French accents and normalize
+        # Remove accents: handle common French accents
         local name_normalized=$(echo "$name_lower" | sed 's/[éèêë]/e/g; s/[àâä]/a/g; s/[ùûü]/u/g; s/[îï]/i/g; s/[ôö]/o/g; s/ç/c/g')
         
         # Match: dev, development, developpement (after accent removal)
@@ -112,8 +114,13 @@ detect_dev_folder() {
         fi
     done
     
-    # Fallback to ~/Development if nothing found
-    echo "$home_dir/Development"
+    # No existing folder found - return locale-appropriate default (don't create it)
+    local locale=$(defaults read -g AppleLocale 2>/dev/null || echo "en_US")
+    if [[ "$locale" =~ ^fr ]]; then
+        echo "$home_dir/Développement"
+    else
+        echo "$home_dir/Development"
+    fi
     return 1
 }
 

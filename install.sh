@@ -206,12 +206,11 @@ configure_mcp() {
     local MCP_OUTPUT="$SCRIPT_DIR/template/.rulesync/mcp.json"
     local ENV_FILE="$SCRIPT_DIR/.env"
 
-    # Create directories
+    # Create directories for tool configs (NOT dev folder - that's user's choice)
     mkdir -p ~/.cursor 2>/dev/null || true
     mkdir -p ~/.claude/commands 2>/dev/null || true
     mkdir -p ~/Library/Application\ Support/Claude 2>/dev/null || true
     mkdir -p ~/Library/Application\ Support/Cursor/User/globalStorage/rooveterinaryinc.roo-code-nightly/settings 2>/dev/null || true
-    mkdir -p "$(get_dev_folder)" 2>/dev/null || true
 
     # Load existing .env
     if [ -f "$ENV_FILE" ]; then

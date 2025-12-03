@@ -25,7 +25,9 @@ else
 fi
 
 # Detect dev folder (inline version for bootstrap)
+# Returns existing folder if found, or locale-appropriate default
 detect_dev_folder() {
+    # First, check for existing dev folders
     for dir in "$HOME"/*/; do
         [ -d "$dir" ] || continue
         local name=$(basename "$dir")
@@ -38,7 +40,14 @@ detect_dev_folder() {
             return 0
         fi
     done
-    echo "$HOME/Development"
+    
+    # No existing folder found - create locale-appropriate default
+    local locale=$(defaults read -g AppleLocale 2>/dev/null || echo "en_US")
+    if [[ "$locale" =~ ^fr ]]; then
+        echo "$HOME/Développement"
+    else
+        echo "$HOME/Development"
+    fi
 }
 
 # Config
