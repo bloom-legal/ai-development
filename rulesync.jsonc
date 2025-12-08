@@ -1,6 +1,6 @@
 {
   "$schema": "https://raw.githubusercontent.com/dyoshikawa/rulesync/main/schema.json",
-  "targets": ["cursor", "roo"],
+  "targets": ["claudecode", "cursor", "roo"],
   "features": ["rules", "ignore", "mcp", "commands"],
   "simulateCommands": true,
   "delete": true,
