@@ -194,9 +194,7 @@ check_mcp_config() {
 
 check_mcp_config "Cursor" "$CURSOR_MCP"
 check_mcp_config "Roo Code" "$ROO_MCP"
-
-# Claude Desktop needs special handling (has preferences)
-check_mcp_config "Claude Desktop" "$CLAUDE_DESKTOP_MCP"
+check_mcp_config "Claude Code CLI" "$CLAUDE_CODE_MCP"
 
 header "MCP Server Availability"
 
@@ -233,7 +231,7 @@ fi
 header "Development Projects"
 
 DEV_DIR="$(get_dev_folder)"
-SKIP_PATTERN="global|_archives|^\."
+# SYNC_SKIP_PATTERN is defined in common.sh
 PROJECT_COUNT=0
 PROJECT_ISSUES=0
 
@@ -243,8 +241,8 @@ if [ -d "$DEV_DIR" ]; then
     for dir in "$DEV_DIR"/*/; do
         [ ! -d "$dir" ] && continue
         name=$(basename "$dir")
-        [[ "$name" =~ $SKIP_PATTERN ]] && continue
-        
+        [[ "$name" =~ $SYNC_SKIP_PATTERN ]] && continue
+
         ((PROJECT_COUNT++))
         
         # Check if project has rulesync

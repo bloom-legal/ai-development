@@ -1,40 +1,73 @@
 {
   "mcpServers": {
+    "sentry": {
+      "description": "Sentry error monitoring - inspect issues, triage errors, manage projects",
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@sentry/mcp-server",
+        "--access-token",
+        "$SENTRY_AUTH_TOKEN",
+        "--host",
+        "sentry.klarc.eu",
+        "--organization-slug",
+        "sentry"
+      ]
+    },
     "context7": {
       "description": "Up-to-date documentation and code examples for libraries",
       "type": "stdio",
       "command": "npx",
-      "args": ["-y", "@upstash/context7-mcp"]
+      "args": [
+        "-y",
+        "@upstash/context7-mcp"
+      ]
     },
     "sequential-thinking": {
       "description": "Step-by-step reasoning and problem decomposition",
       "type": "stdio",
       "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"]
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-sequential-thinking"
+      ]
     },
     "npm-helper": {
       "description": "Search npm packages and check for updates",
       "type": "stdio",
       "command": "npx",
-      "args": ["-y", "@pinkpixel/npm-helper-mcp"]
+      "args": [
+        "-y",
+        "@pinkpixel/npm-helper-mcp"
+      ]
     },
     "postgres": {
       "description": "Query PostgreSQL databases",
       "type": "stdio",
       "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-postgres", "postgresql://$POSTGRES_CONNECTION"]
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-postgres",
+        "postgresql://$POSTGRES_CONNECTION"
+      ]
     },
     "docker": {
       "description": "Manage Docker containers and compose stacks",
       "type": "stdio",
       "command": "uvx",
-      "args": ["docker-mcp"]
+      "args": [
+        "docker-mcp"
+      ]
     },
     "puppeteer": {
       "description": "Browser automation - navigate, screenshot, click, fill forms",
       "type": "stdio",
       "command": "npx",
-      "args": ["-y", "puppeteer-mcp-server"]
+      "args": [
+        "-y",
+        "puppeteer-mcp-server"
+      ]
     },
     "jina": {
       "description": "Web search, read URLs, search images and academic papers",
@@ -59,13 +92,19 @@
       "description": "Chrome DevTools - inspect, debug, profile pages via CDP",
       "type": "stdio",
       "command": "npx",
-      "args": ["-y", "chrome-devtools-mcp"]
+      "args": [
+        "-y",
+        "chrome-devtools-mcp"
+      ]
     },
     "github": {
       "description": "GitHub - repos, issues, PRs, branches, commits, code search",
       "type": "stdio",
       "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-github"
+      ],
       "env": {
         "GITHUB_PERSONAL_ACCESS_TOKEN": "$GITHUB_TOKEN"
       }

@@ -558,12 +558,12 @@
     },
     "speckit_workflow": {
       "description": "SpecKit provides end-to-end feature development workflow",
-      "typical_flow": "specify → clarify → plan → tasks → analyze → implement",
+      "typical_flow": "specify \u2192 clarify \u2192 plan \u2192 tasks \u2192 analyze \u2192 implement",
       "phase_triggers": "Commands auto-suggest based on current phase and available artifacts"
     },
     "custom_commands": {
-      "custom-refactor": "Multi-wave parallel refactoring: foundation → semantics → architecture → polish",
-      "custom-upgrade": "Risk-based upgrade strategy: patches → minors → majors with automated fixes"
+      "custom-refactor": "Multi-wave parallel refactoring: foundation \u2192 semantics \u2192 architecture \u2192 polish",
+      "custom-upgrade": "Risk-based upgrade strategy: patches \u2192 minors \u2192 majors with automated fixes"
     }
   }
 }

@@ -1,0 +1,41 @@
+{
+  "version": "2.0.0",
+  "description": "AI Development Environment - Module Manifest",
+  "modules": {
+    "diet103": {
+      "version": "1.0.0",
+      "enabled": true,
+      "description": "Hooks, skills, and agents infrastructure",
+      "components": ["hooks", "skills", "agents", "skill-rules.json", "settings.json"]
+    },
+    "speckit": {
+      "version": "1.0.0",
+      "enabled": true,
+      "description": "SpecKit templates and workflow",
+      "components": [".specify/"]
+    },
+    "rulesync": {
+      "version": "1.0.0",
+      "enabled": true,
+      "description": "Rules and .aiignore for AI editors",
+      "components": ["rules/", ".aiignore"]
+    },
+    "commands": {
+      "version": "1.0.0",
+      "enabled": true,
+      "description": "Slash commands (auto-discovered from .rulesync/commands/)",
+      "components": [".rulesync/commands/"]
+    }
+  },
+  "mcpServers": {
+    "description": "MCP servers synced to global configs (no version pinning - always latest)",
+    "location": ".rulesync/mcp.json.template"
+  },
+  "globals": {
+    "CLAUDE.md": {
+      "description": "Development principles (synced to ~/.claude/CLAUDE.md)",
+      "location": "template/CLAUDE.md"
+    }
+  },
+  "lastSync": null
+}

@@ -1,14 +1,13 @@
 # Automated Project Synchronization
 
-Your 49 projects stay automatically updated using multiple sync strategies:
+Your projects stay automatically updated using multiple sync strategies.
 
-## 🔄 Automatic Sync Methods
+## Automatic Sync Methods
 
 ### 1. Git Hook (Automatic on Pull)
 - **Trigger**: Runs automatically after `git pull` in global repo
 - **Location**: `.git/hooks/post-merge`
-- **What**: Syncs infrastructure changes to all 49 projects
-- **Setup**: ✅ Already configured
+- **What**: Syncs infrastructure changes to all projects
 - **Log**: `/tmp/global-sync.log`
 
 ### 2. Daily Sync (LaunchAgent)
@@ -16,13 +15,8 @@ Your 49 projects stay automatically updated using multiple sync strategies:
 - **Location**: `~/Library/LaunchAgents/com.global.autosync.plist`
 - **Setup**:
   ```bash
-  # Load the agent
   launchctl load ~/Library/LaunchAgents/com.global.autosync.plist
-
-  # Start immediately (optional)
   launchctl start com.global.autosync
-
-  # Check status
   launchctl list | grep autosync
   ```
 - **Uninstall**:
@@ -36,21 +30,28 @@ Your 49 projects stay automatically updated using multiple sync strategies:
 - **Background**: `./auto-sync.sh --background`
 - **Original**: `./sync-rules.sh sync`
 
-## 📊 What Gets Synced
+## What Gets Synced
 
-From `~/Development/global/template/` to all 49 projects:
+From `~/Development/global/template/` to all projects:
 
-| Module | Synced |
-|--------|--------|
-| **diet103** | Hooks, Skills, Agents |
-| **SpecKit** | Templates, Infrastructure |
-| **Rulesync** | Rules, Commands |
-| **Custom** | Project-specific commands |
-| **MCP** | Global MCP configs |
+| Module | What | Scope |
+|--------|------|-------|
+| **CLAUDE.md** | Development principles | `~/.claude/CLAUDE.md` (global) |
+| **MCP** | MCP server configs | Global (Cursor, Claude Code, Roo) |
+| **Commands** | Slash commands | Per-project (auto-discovered) |
+| **diet103** | Hooks, Skills, Agents | Per-project |
+| **SpecKit** | Workflow templates | Per-project |
+| **Rulesync** | Rules, `.aiignore` | Per-project |
 
-## 🔍 Monitoring
+## Command Discovery
 
-Check sync status:
+Commands are auto-discovered from `template/.rulesync/commands/`:
+- All `*.md` files synced to each project's `.rulesync/commands/` and `.claude/commands/`
+- No hardcoded command lists
+- Add new commands by dropping `.md` files into the directory
+
+## Monitoring
+
 ```bash
 # View latest sync log
 cat /tmp/global-sync.log
@@ -64,44 +65,31 @@ cd ~/Development/global
 ./check.sh
 ```
 
-## 🎯 Sync Behavior
-
-1. **Pre-flight check** - Validates all prerequisites
-2. **Health check** - Ensures 49 projects configured correctly
-3. **Module sync** - Copies template changes to all projects
-4. **Rulesync generation** - Generates Cursor/Roo commands
-5. **Verification** - Confirms sync success
-
-## 🛠️ Modular Building Blocks
+## Building Blocks
 
 Enable/disable modules in `sync-rules.sh`:
 ```bash
-ENABLE_DIET103=true       # Hooks + Skills + Agents
-ENABLE_SPECKIT=true       # SpecKit templates
-ENABLE_CUSTOM=true        # Custom commands
-ENABLE_RULESYNC=true      # Rulesync config
-ENABLE_SUPERCLAUDE=false  # Deprecated
+ENABLE_DIET103=true    # Hooks + Skills + Agents
+ENABLE_SPECKIT=true    # SpecKit templates
+ENABLE_RULESYNC=true   # Rules and .aiignore
 ```
 
-## 📦 Update Workflow
+Commands are always synced (dynamic discovery from `.rulesync/commands/`).
 
-To update infrastructure:
+## Update Workflow
+
 1. Make changes in `~/Development/global/template/`
 2. Commit and push (git hook runs sync automatically)
 3. Or run `./auto-sync.sh` manually
-4. All 49 projects updated automatically
+4. All projects updated automatically
 
-## 🔐 Safety Features
+## Version Tracking
 
-- Dry-run mode available: `./sync-rules.sh --dry-run`
+See `template/MODULE_MANIFEST.json` for module versions and sync status.
+
+## Safety Features
+
 - Logs all operations to `/tmp/`
 - Pre-flight checks prevent broken deployments
 - Modular - disable any building block
 - Skip patterns: `global`, `_archives`, hidden folders
-
-## 💡 Tips
-
-- **After template updates**: Sync runs automatically via git hook
-- **Check before PR**: Run `./check.sh` to validate all projects
-- **Force sync**: `./sync-rules.sh sync` (no background)
-- **View config**: `./check.sh` shows full system state

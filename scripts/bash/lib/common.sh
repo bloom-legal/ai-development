@@ -137,10 +137,21 @@ get_dev_folder() {
     echo "$DEV_FOLDER"
 }
 
-# Global MCP config locations (exported for use by sourcing scripts)
+# ============================================================================
+# GLOBAL TOOL CONFIG PATHS (single source of truth)
+# ============================================================================
+
+# MCP config locations
 export CURSOR_MCP="$HOME/.cursor/mcp.json"
-export CLAUDE_DESKTOP_MCP="$HOME/Library/Application Support/Claude/claude_desktop_config.json"
+export CLAUDE_CODE_MCP="$HOME/.claude.json"
 export ROO_MCP="$HOME/Library/Application Support/Cursor/User/globalStorage/rooveterinaryinc.roo-code-nightly/settings/mcp_settings.json"
+
+# Claude Code global settings
+export CLAUDE_GLOBAL_MD="$HOME/.claude/CLAUDE.md"
+export CLAUDE_GLOBAL_DIR="$HOME/.claude"
+
+# Project sync skip pattern
+export SYNC_SKIP_PATTERN="global|_archives|^\."
 
 # Initialize colors on load
 init_colors
