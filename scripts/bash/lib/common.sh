@@ -32,14 +32,6 @@ error() { echo -e "${COLOR_RED}✗ $1${COLOR_RESET}"; }
 header() { echo -e "\n${COLOR_BLUE}=== $1 ===${COLOR_RESET}"; }
 info() { echo -e "${COLOR_CYAN}$1${COLOR_RESET}"; }
 
-# Get script directory (works when sourced or executed)
-get_script_dir() {
-    local script_path="${BASH_SOURCE[${#BASH_SOURCE[@]} - 1]}"
-    if [[ -z "$script_path" ]]; then
-        script_path="$0"
-    fi
-    cd "$(dirname "$script_path")" && pwd
-}
 
 # Setup Homebrew PATH
 setup_brew_path() {

@@ -329,7 +329,7 @@ action="${1:-sync}"
 
 # Run pre-flight check for sync operations (skip for mcp/clean/help to avoid loops)
 # mcp is excluded because check.sh calls sync-rules.sh mcp to remediate
-if [[ "$action" =~ ^(sync|generate|update)$ ]] && [[ -z "$SKIP_PATTERN_PREFLIGHT" ]]; then
+if [[ "$action" =~ ^(sync|generate|update)$ ]] && [[ -z "$SKIP_PREFLIGHT" ]]; then
     preflight_check
 fi
 
