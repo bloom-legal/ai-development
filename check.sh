@@ -14,7 +14,7 @@ TEMPLATE_DIR="$SCRIPT_DIR/template"
 FIX_MODE="${1:-}"
 ERROR_COUNT=0
 
-# MCP paths are defined in common.sh: CURSOR_MCP, CLAUDE_DESKTOP_MCP, ROO_MCP
+# MCP paths are defined in common.sh: CURSOR_MCP, CLAUDE_CODE_MCP, ROO_MCP
 
 remediate() {
     if [[ "$FIX_MODE" == "--fix" ]]; then

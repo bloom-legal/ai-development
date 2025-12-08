@@ -112,7 +112,7 @@ Expected: ✅ Shows hooks/, skills/, agents/ directories
 ## Post-Installation
 
 ### Read Documentation
-- [ ] Read `DIET103_INTEGRATION.md` (full documentation)
+- [ ] Read `DIET103-INTEGRATION.md` (full documentation)
 - [ ] Read `HOOKS_QUICKSTART.md` (quick reference)
 - [ ] Read `.claude/skills/README.md` (skill system overview)
 
