@@ -85,7 +85,7 @@ Commands are always synced (dynamic discovery from `.rulesync/commands/`).
 
 ## Version Tracking
 
-See `template/MODULE_MANIFEST.json` for module versions and sync status.
+See `template/module-manifest.json` for module versions and sync status.
 
 ## Safety Features
 

@@ -1,8 +1,6 @@
-Initialize a new SpecKit project.
+Initialize SpecKit in the current folder.
 
 Run this command:
 ```bash
-uvx --from git+https://github.com/github/spec-kit.git specify init $ARGUMENTS
+uvx --from git+https://github.com/github/spec-kit.git specify init --here --ai claude --force
 ```
-
-Where $ARGUMENTS is the project name provided by the user.
