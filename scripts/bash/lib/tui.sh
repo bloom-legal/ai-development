@@ -5,10 +5,10 @@
 
 # shellcheck disable=SC2155
 
-# Check if common.sh is loaded
-if [ -z "${COLOR_GREEN:-}" ]; then
-    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-    source "$SCRIPT_DIR/common.sh"
+# Check if common.sh is loaded (use +x to check if SET, not if non-empty)
+if [ -z "${COLOR_GREEN+x}" ]; then
+    _TUI_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    source "$_TUI_DIR/common.sh"
 fi
 
 # ============================================================================
@@ -16,21 +16,22 @@ fi
 # ============================================================================
 
 # Global menu state (set by calling script)
-declare -g TUI_CURRENT=0      # Current cursor position
-declare -g TUI_TOTAL=0        # Total number of items
-declare -g TUI_MIN_POS=-2     # Minimum position (-2=Deselect All, -1=Select All)
+# Note: Using simple assignment for bash 3.x compatibility (declare -g requires bash 4.2+)
+TUI_CURRENT=0      # Current cursor position
+TUI_TOTAL=0        # Total number of items
+TUI_MIN_POS=-2     # Minimum position (-2=Deselect All, -1=Select All)
 
 # Arrays (must be declared by calling script)
-# declare -a TUI_ITEMS      # Array of items: "name|field2|field3|..."
-# declare -a TUI_SELECTED   # Selection state: 1=selected, 0=not selected
-# declare -a TUI_INSTALLED  # Optional: Install state: 1=installed, 0=not installed
+# TUI_ITEMS=()      # Array of items: "name|field2|field3|..."
+# TUI_SELECTED=()   # Selection state: 1=selected, 0=not selected
+# TUI_INSTALLED=()  # Optional: Install state: 1=installed, 0=not installed
 
 # Menu configuration (set by calling script)
-declare -g TUI_TITLE=""           # Menu title
-declare -g TUI_INSTRUCTIONS=""    # Menu instructions
-declare -g TUI_TITLE_COLOR="${COLOR_GREEN}"  # Title color (default green)
-declare -g TUI_CHECKBOX_SELECTED="${COLOR_YELLOW}[x]${COLOR_RESET}"  # Selected checkbox
-declare -g TUI_CHECKBOX_EMPTY="[ ]"  # Empty checkbox
+TUI_TITLE=""           # Menu title
+TUI_INSTRUCTIONS=""    # Menu instructions
+TUI_TITLE_COLOR="${COLOR_GREEN}"  # Title color (default green)
+TUI_CHECKBOX_SELECTED="${COLOR_YELLOW}[x]${COLOR_RESET}"  # Selected checkbox
+TUI_CHECKBOX_EMPTY="[ ]"  # Empty checkbox
 
 # ============================================================================
 # MENU DRAWING FUNCTIONS
@@ -293,10 +294,8 @@ tui_run_menu_loop() {
 tui_init() {
     local items_ref=$1
 
-    # Use nameref to get array
-    local -n items=$items_ref
-
-    TUI_TOTAL=${#items[@]}
+    # Get array length using eval for bash 3.x compatibility
+    eval "TUI_TOTAL=\${#${items_ref}[@]}"
     TUI_CURRENT=0
     TUI_MIN_POS=-2
 }

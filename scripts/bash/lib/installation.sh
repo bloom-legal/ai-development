@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 # Installation module - Package installation functions
-# Source this file: source "$(dirname "${BASH_SOURCE[0]}")/lib/installation.sh"
+# Note: This module expects common.sh to be sourced by the parent script
 
-# Load common functions
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-source "$SCRIPT_DIR/scripts/bash/lib/common.sh"
+# Guard: Only source common.sh if not already loaded (use +x to check if SET)
+if [ -z "${COLOR_GREEN+x}" ]; then
+    _MODULE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    source "$_MODULE_DIR/common.sh"
+fi
 
 # Install Homebrew
 install_brew() {

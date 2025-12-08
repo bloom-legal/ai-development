@@ -1,1 +1,8 @@
-<speckit-project-init><description>Initialize a new project using GitHub's SpecKit framework for specification-driven development.</description><reference>https://github.com/github/spec-kit</reference><instructions><step>Create a new project directory if not already in one</step><step>Initialize git repository with: git init</step><step>Fetch the SpecKit structure from https://github.com/github/spec-kit as reference</step><step>Create the SpecKit directory structure: .speckit/, specs/, docs/</step><step>Create initial spec files based on SpecKit conventions</step><step>Create .speckit/config.yml with default configuration</step><step>Stage all files with: git add .</step><step>Create initial commit with message: "Initial commit: SpecKit project setup"</step></instructions><rules><rule>Do NOT clone or fork the speckit repository - only use it as a reference</rule><rule>Create a fresh project structure inspired by SpecKit conventions</rule><rule>Always initialize git and create the initial commit</rule><rule>Include a README.md explaining the project uses SpecKit methodology</rule></rules><output>Report the created files and confirm git initialization with commit hash</output></speckit-project-init>
+Initialize a new SpecKit project.
+
+Run this command:
+```bash
+uvx --from git+https://github.com/github/spec-kit.git specify init $ARGUMENTS
+```
+
+Where $ARGUMENTS is the project name provided by the user.
