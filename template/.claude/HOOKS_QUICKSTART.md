@@ -135,7 +135,7 @@ npm run check
 
 ## Learn More
 
-- Full documentation: `../DIET103_INTEGRATION.md`
+- Full documentation: `../DIET103-INTEGRATION.md`
 - Skill system: `.claude/skills/README.md`
 - Agents: `.claude/agents/*.md`
 
