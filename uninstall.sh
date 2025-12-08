@@ -6,6 +6,7 @@ set -e
 # Load common functions
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/scripts/bash/lib/common.sh"
+source "$SCRIPT_DIR/scripts/bash/lib/tui.sh"
 
 # Check if terminal supports TUI
 if check_tui_support; then
@@ -15,7 +16,7 @@ else
 fi
 
 # Items to uninstall: "name|command|description"
-ITEMS=(
+TUI_ITEMS=(
     "Claude Code CLI|npm uninstall -g @anthropic-ai/claude-code|Terminal AI assistant"
     "Cursor App|brew uninstall --cask cursor|AI-powered editor"
     "VS Code App|brew uninstall --cask visual-studio-code|Code editor"
@@ -28,35 +29,58 @@ ITEMS=(
 )
 
 # Selection state (1=selected, 0=not selected)
-declare -a SELECTED
-for i in "${!ITEMS[@]}"; do
-    SELECTED[$i]=0
+declare -a TUI_SELECTED
+for i in "${!TUI_ITEMS[@]}"; do
+    TUI_SELECTED[$i]=0
 done
 
-CURRENT=0
-TOTAL=${#ITEMS[@]}
-MIN_POS=-2  # -2=Deselect All, -1=Select All, 0+=items
-
-# Use cursor functions from common library
+# Initialize TUI state
+tui_init TUI_ITEMS
+TUI_TITLE="=== Uninstall AI Development Environment ==="
+TUI_INSTRUCTIONS="↑↓ navigate | Space toggle | a=all | n=none | Enter confirm | q=quit"
+TUI_TITLE_COLOR="${COLOR_RED}"
+TUI_CHECKBOX_SELECTED="${COLOR_RED}[x]${COLOR_RESET}"
 
 trap 'show_cursor; echo' EXIT
 
-# Draw the menu
+# Custom item renderer for uninstall menu
+uninstall_item_renderer() {
+    local i=$1
+    IFS='|' read -r name cmd desc <<< "${TUI_ITEMS[$i]}"
+
+    # Cursor indicator
+    local cursor=" "
+    local line_color=""
+    if [ "$i" -eq "$TUI_CURRENT" ]; then
+        cursor=">"
+        line_color="${COLOR_BOLD}"
+    fi
+
+    # Checkbox
+    local checkbox="[ ]"
+    if [ "${TUI_SELECTED[$i]}" -eq 1 ]; then
+        checkbox="${TUI_CHECKBOX_SELECTED}"
+    fi
+
+    echo -e " ${line_color}${cursor} ${checkbox} ${name}${COLOR_RESET} ${COLOR_DIM}- ${desc}${COLOR_RESET}"
+}
+
+# Draw menu wrapper
 draw_menu() {
     clear
-    echo -e "${COLOR_BOLD}${COLOR_RED}=== Uninstall AI Development Environment ===${COLOR_RESET}"
-    echo -e "${COLOR_DIM}↑↓ navigate | Space toggle | a=all | n=none | Enter confirm | q=quit${COLOR_RESET}"
+    echo -e "${COLOR_BOLD}${TUI_TITLE_COLOR}${TUI_TITLE}${COLOR_RESET}"
+    echo -e "${COLOR_DIM}${TUI_INSTRUCTIONS}${COLOR_RESET}"
     echo ""
 
     # Select All option
-    if [ $CURRENT -eq -1 ]; then
+    if [ $TUI_CURRENT -eq -1 ]; then
         echo -e " ${COLOR_BOLD}> [${COLOR_GREEN}Select All${COLOR_RESET}${COLOR_BOLD}]${COLOR_RESET}"
     else
         echo -e "   [${COLOR_DIM}Select All${COLOR_RESET}]"
     fi
 
     # Deselect All option
-    if [ $CURRENT -eq -2 ]; then
+    if [ $TUI_CURRENT -eq -2 ]; then
         echo -e " ${COLOR_BOLD}> [${COLOR_RED}Deselect All${COLOR_RESET}${COLOR_BOLD}]${COLOR_RESET}"
     else
         echo -e "   [${COLOR_DIM}Deselect All${COLOR_RESET}]"
@@ -64,64 +88,22 @@ draw_menu() {
 
     echo ""
 
-    for i in "${!ITEMS[@]}"; do
-        IFS='|' read -r name cmd desc <<< "${ITEMS[$i]}"
-
-        # Cursor indicator
-        if [ $i -eq $CURRENT ]; then
-            cursor=">"
-            line_color="${COLOR_BOLD}"
-        else
-            cursor=" "
-            line_color=""
-        fi
-
-        # Checkbox
-        if [ ${SELECTED[$i]} -eq 1 ]; then
-            checkbox="${COLOR_RED}[x]${COLOR_RESET}"
-        else
-            checkbox="[ ]"
-        fi
-
-        echo -e " ${line_color}${cursor} ${checkbox} ${name}${COLOR_RESET} ${COLOR_DIM}- ${desc}${COLOR_RESET}"
+    # Draw items
+    for i in "${!TUI_ITEMS[@]}"; do
+        uninstall_item_renderer "$i"
     done
 
     echo ""
 
     # Count selected
-    count=0
-    for s in "${SELECTED[@]}"; do
-        ((count += s))
-    done
+    local count
+    count=$(tui_count_selected)
 
-    if [ $count -gt 0 ]; then
+    if [ "$count" -gt 0 ]; then
         echo -e "${COLOR_YELLOW}$count item(s) selected for removal${COLOR_RESET}"
     else
         echo -e "${COLOR_DIM}No items selected${COLOR_RESET}"
     fi
-}
-
-# Toggle current item
-toggle_current() {
-    if [ $CURRENT -eq -1 ]; then
-        # Select All
-        select_all 1
-    elif [ $CURRENT -eq -2 ]; then
-        # Deselect All
-        select_all 0
-    elif [ ${SELECTED[$CURRENT]} -eq 1 ]; then
-        SELECTED[$CURRENT]=0
-    else
-        SELECTED[$CURRENT]=1
-    fi
-}
-
-# Select/deselect all
-select_all() {
-    local val=$1
-    for i in "${!SELECTED[@]}"; do
-        SELECTED[$i]=$val
-    done
 }
 
 # Execute uninstall
@@ -131,10 +113,10 @@ do_uninstall() {
     echo ""
 
     local any_selected=0
-    for i in "${!ITEMS[@]}"; do
-        if [ ${SELECTED[$i]} -eq 1 ]; then
+    for i in "${!TUI_ITEMS[@]}"; do
+        if [ "${TUI_SELECTED[$i]}" -eq 1 ]; then
             any_selected=1
-            IFS='|' read -r name cmd desc <<< "${ITEMS[$i]}"
+            IFS='|' read -r name cmd desc <<< "${TUI_ITEMS[$i]}"
             echo -e "${COLOR_YELLOW}Removing: ${name}...${COLOR_RESET}"
             eval "$cmd" 2>/dev/null || echo -e "${COLOR_DIM}  (already removed or failed)${COLOR_RESET}"
             echo -e "${COLOR_GREEN}✓ ${name} removed${COLOR_RESET}"
@@ -160,8 +142,8 @@ run_list_mode() {
     echo "Installed components:"
     echo ""
 
-    for i in "${!ITEMS[@]}"; do
-        IFS='|' read -r name cmd desc <<< "${ITEMS[$i]}"
+    for i in "${!TUI_ITEMS[@]}"; do
+        IFS='|' read -r name cmd desc <<< "${TUI_ITEMS[$i]}"
         echo "  $((i+1)). $name - $desc"
     done
 
@@ -185,51 +167,55 @@ while true; do
     read -rsn1 key 2>/dev/null || { run_list_mode; exit 0; }
 
     case "$key" in
-        A|k) # Up arrow or k
-            ((CURRENT > MIN_POS)) && ((CURRENT--)) || true
+        A|k)
+            # Up arrow or k
+            tui_move_up
             ;;
-        B|j) # Down arrow or j
-            ((CURRENT < TOTAL - 1)) && ((CURRENT++)) || true
+        B|j)
+            # Down arrow or j
+            tui_move_down
             ;;
-        ' ') # Space - toggle
-            toggle_current
+        ' ')
+            # Space - toggle
+            tui_toggle_current
             ;;
-        a) # Select all
-            select_all 1
+        a)
+            # Select all
+            tui_select_all 1
             ;;
-        n) # Deselect all
-            select_all 0
+        n)
+            # Deselect all
+            tui_select_all 0
             ;;
-        q) # Quit
+        q)
+            # Quit
             echo ""
             echo -e "${COLOR_DIM}Cancelled${COLOR_RESET}"
             exit 0
             ;;
-        '') # Enter - confirm
-            # Check if anything selected
-            any=0
-            for s in "${SELECTED[@]}"; do
-                ((any += s))
-            done
+        '')
+            # Enter - confirm
+            count=$(tui_count_selected)
 
-            if [ $any -eq 0 ]; then
+            if [ "$count" -eq 0 ]; then
                 continue
             fi
 
             # Confirm
             echo ""
-            echo -e "${COLOR_RED}${COLOR_BOLD}Are you sure you want to uninstall $any item(s)? [y/N]${COLOR_RESET} "
+            echo -e "${COLOR_RED}${COLOR_BOLD}Are you sure you want to uninstall $count item(s)? [y/N]${COLOR_RESET} "
             read -rsn1 confirm
             if [[ "$confirm" =~ ^[Yy]$ ]]; then
                 do_uninstall
                 exit 0
             fi
             ;;
-        $'\x1b') # Escape sequence (arrow keys)
+        $'\x1b')
+            # Escape sequence (arrow keys)
             read -rsn2 arrow 2>/dev/null || true
             case "$arrow" in
-                '[A') ((CURRENT > MIN_POS)) && ((CURRENT--)) || true ;;
-                '[B') ((CURRENT < TOTAL - 1)) && ((CURRENT++)) || true ;;
+                '[A') tui_move_up ;;
+                '[B') tui_move_down ;;
             esac
             ;;
     esac
