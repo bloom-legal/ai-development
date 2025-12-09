@@ -28,6 +28,8 @@ template/.mcp.json
 # ============================================================================
 .cursor/
 .roo/
+.rulesync/
+.specify/
 .cursorignore
 .rooignore
 AGENTS.md
