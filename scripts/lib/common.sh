@@ -172,7 +172,7 @@ export CLAUDE_GLOBAL_MD="$HOME/.claude/CLAUDE.md"
 export CLAUDE_GLOBAL_DIR="$HOME/.claude"
 
 # Project sync skip pattern
-export SYNC_SKIP_PATTERN="global|_archives|^\."
+export SYNC_SKIP_PATTERN="_archives|^\."
 
 # Initialize colors on load
 init_colors

@@ -142,3 +142,9 @@ coverage/
 # Test and debugging scripts
 /test-*.sh
 /debug-*.sh
+
+# Claude Code local/generated
+.claude/
+.spec-workflow/
+tools.yaml
+specs/
