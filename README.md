@@ -11,7 +11,7 @@ curl -fsSL https://raw.githubusercontent.com/bloom-legal/ai-development/main/boo
 
 **Existing clone (interactive menu):**
 ```bash
-./install.sh
+./scripts/install.sh
 ```
 
 ## What Gets Installed
@@ -44,7 +44,7 @@ Pre-configured Model Context Protocol servers synced to Cursor, Claude Desktop, 
 The bootstrap one-liner skips secrets configuration for a truly hands-free install. To configure MCP server secrets later, run the interactive installer:
 
 ```bash
-./install.sh
+./scripts/install.sh
 ```
 
 This prompts for optional secrets:
@@ -62,12 +62,12 @@ Press Enter to skip any value. Re-run anytime to update secrets.
 ## Commands
 
 ```bash
-./install.sh                    # Interactive installation with menu
-./install.sh --auto             # Install all, prompt for secrets
-./install.sh --auto --skip-secrets  # Install all, no prompts (one-click)
-./uninstall.sh                  # Interactive uninstall with checklist
-./check.sh                      # Verify setup
-./check.sh --fix                # Auto-fix issues
+./scripts/install.sh                    # Interactive installation with menu
+./scripts/install.sh --auto             # Install all, prompt for secrets
+./scripts/install.sh --auto --skip-secrets  # Install all, no prompts (one-click)
+./scripts/uninstall.sh                  # Interactive uninstall with checklist
+./scripts/check.sh                      # Verify setup
+./scripts/check.sh --fix                # Auto-fix issues
 ./sync-rules.sh mcp             # Sync MCP configs to all tools
 ./sync-rules.sh sync            # Sync rules + commands to projects
 ```

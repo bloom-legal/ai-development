@@ -96,10 +96,10 @@ ENABLE_RULESYNC=true   # Rules for Cursor/Roo
 
 | Script | Purpose | Usage |
 |--------|---------|-------|
-| [install.sh](install.sh) | Interactive installation | `./install.sh` |
-| [uninstall.sh](uninstall.sh) | Clean removal | `./uninstall.sh` |
+| [install.sh](install.sh) | Interactive installation | `./scripts/install.sh` |
+| [uninstall.sh](uninstall.sh) | Clean removal | `./scripts/uninstall.sh` |
 | [sync-rules.sh](sync-rules.sh) | Sync configs to projects | `./sync-rules.sh sync` |
-| [check.sh](check.sh) | Verify setup | `./check.sh --fix` |
+| [check.sh](check.sh) | Verify setup | `./scripts/check.sh --fix` |
 | [bootstrap.sh](bootstrap.sh) | One-liner fresh install | `curl ... \| bash` |
 
 ### sync-rules.sh Commands
@@ -258,16 +258,16 @@ From [template/CLAUDE.md](template/CLAUDE.md):
 curl -fsSL https://raw.githubusercontent.com/bloom-legal/ai-development/main/bootstrap.sh | bash
 
 # Interactive install
-./install.sh
+./scripts/install.sh
 
 # Sync everything
 ./sync-rules.sh sync
 
 # Verify setup
-./check.sh
+./scripts/check.sh
 
 # Fix issues
-./check.sh --fix
+./scripts/check.sh --fix
 
 # Sync MCPs only
 ./sync-rules.sh mcp
@@ -279,24 +279,26 @@ curl -fsSL https://raw.githubusercontent.com/bloom-legal/ai-development/main/boo
 
 ```
 global/
-├── docs/                       # Documentation
+├── sync-rules.sh               # Main entry point
+├── bootstrap.sh                # Remote curl install
 ├── scripts/
+│   ├── install.sh              # Interactive installer
+│   ├── uninstall.sh            # Clean removal
+│   ├── check.sh                # Verify setup
+│   ├── auto-sync.sh            # Background sync
 │   ├── lib/                    # Shell modules
 │   └── js/                     # JS utilities
 ├── template/                   # SOURCE OF TRUTH
-│   ├── .claude/                # Claude Code (synced to ~/.claude/)
+│   ├── .claude/                # → syncs to ~/.claude/
 │   │   ├── commands/           # Slash commands
 │   │   ├── agents/             # Agent definitions
 │   │   ├── hooks/              # Tool hooks
 │   │   └── settings.json       # Hooks config
-│   ├── .rulesync/              # Cursor/Roo (per-project)
+│   ├── .rulesync/              # → syncs per-project
 │   │   ├── rules/              # AI rules
 │   │   └── mcp.json.template   # MCP template
-│   ├── .specify/               # SpecKit templates
 │   └── CLAUDE.md               # Development principles
-├── sync-rules.sh               # Main sync script
-├── check.sh                    # Verification
-└── install.sh                  # Interactive installer
+└── docs/                       # Documentation
 ```
 
 ---

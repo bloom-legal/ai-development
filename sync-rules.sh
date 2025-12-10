@@ -27,7 +27,7 @@ export TEMPLATE_DIR="$SCRIPT_DIR/template"
 
 # Pre-flight check and remediation
 preflight_check() {
-    local check_script="$SCRIPT_DIR/check.sh"
+    local check_script="$SCRIPT_DIR/scripts/check.sh"
 
     if [ ! -f "$check_script" ]; then
         warn "check.sh not found, skipping pre-flight check"

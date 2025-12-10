@@ -35,7 +35,7 @@ Your projects stay automatically updated using multiple sync strategies.
 
 ### 3. Manual Sync (On Demand)
 - **Command**: `./sync-rules.sh sync`
-- **Background**: `./auto-sync.sh --background`
+- **Background**: `./scripts/auto-sync.sh --background`
 
 ## What Gets Synced
 
@@ -59,7 +59,7 @@ Your projects stay automatically updated using multiple sync strategies.
 cat /tmp/global-sync.log
 
 # Manual check
-./check.sh
+./scripts/check.sh
 ```
 
 ## Building Blocks

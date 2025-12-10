@@ -5,8 +5,8 @@
 ```bash
 ./sync-rules.sh sync    # Sync everything to all projects
 ./sync-rules.sh mcp     # Sync MCPs to global configs only
-./check.sh              # Verify setup
-./check.sh --fix        # Auto-fix issues
+./scripts/check.sh              # Verify setup
+./scripts/check.sh --fix        # Auto-fix issues
 ```
 
 ## Custom Slash Commands
@@ -62,10 +62,10 @@ Note: Commands, hooks, agents are always synced to global `~/.claude/`
 
 ```bash
 # Check what's wrong
-./check.sh
+./scripts/check.sh
 
 # Fix automatically
-./check.sh --fix
+./scripts/check.sh --fix
 
 # Regenerate MCP configs
 ./sync-rules.sh mcp

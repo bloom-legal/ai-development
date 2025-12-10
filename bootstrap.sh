@@ -265,14 +265,14 @@ fi
 # 5. Run the full install script
 header "Running Install Script"
 cd "$INSTALL_DIR"
-chmod +x install.sh check.sh sync-rules.sh uninstall.sh 2>/dev/null || true
+chmod +x sync-rules.sh scripts/*.sh 2>/dev/null || true
 
 # Run install in fully automatic mode (no prompts at all)
-./install.sh --auto --skip-secrets
+./scripts/install.sh --auto --skip-secrets
 
 # Run full environment check
 header "Verifying Setup"
-./check.sh || true
+./scripts/check.sh || true
 
 header "Bootstrap Complete!"
 echo ""
@@ -282,11 +282,11 @@ echo "Next steps:"
 echo "  1. Open a new terminal window (to refresh PATH)"
 echo "  2. Open Cursor and sign in"
 echo "  3. Run 'claude' in terminal to authenticate Claude Code CLI"
-echo "  4. Run './install.sh' to configure MCP secrets (optional)"
+echo "  4. Run './scripts/install.sh' to configure MCP secrets (optional)"
 echo ""
 echo "Useful commands:"
-echo "  $INSTALL_DIR/install.sh       # Configure MCP secrets"
-echo "  $INSTALL_DIR/uninstall.sh     # Uninstall components"
-echo "  $INSTALL_DIR/sync-rules.sh    # Sync configs"
-echo "  $INSTALL_DIR/check.sh         # Verify setup"
+echo "  $INSTALL_DIR/scripts/install.sh     # Configure MCP secrets"
+echo "  $INSTALL_DIR/scripts/uninstall.sh   # Uninstall components"
+echo "  $INSTALL_DIR/sync-rules.sh          # Sync configs"
+echo "  $INSTALL_DIR/scripts/check.sh       # Verify setup"
 echo ""
