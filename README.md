@@ -1,27 +1,51 @@
 # AI Development Environment
 
-One-command setup for AI-assisted development on Mac. Installs and configures Cursor, Claude Code CLI, and MCP servers.
+One-command setup for AI-assisted development on Mac.
 
 ## Quick Start
 
-**Fresh Mac (one-click, no prompts):**
+Set up Claude Code and essential dev tools with a single command:
+
 ```bash
-curl -fsSL https://raw.githubusercontent.com/bloom-legal/ai-development/main/bootstrap.sh | bash
+curl -fsSL https://raw.githubusercontent.com/joachimbrindeau/global/main/scripts/setup.sh | bash
 ```
 
-**Existing clone (interactive menu):**
+That's it! The script will install everything you need for AI-assisted development.
+
+### Requirements
+
+- **macOS Monterey (12.0) or newer**
+- Internet connection
+- Admin password (for Homebrew installation)
+
+### What Gets Installed
+
+| Tool | Purpose |
+|------|---------|
+| Homebrew | macOS package manager |
+| Node.js | JavaScript runtime |
+| VS Code | Code editor |
+| Cursor | AI-powered editor |
+| jq | JSON processor |
+| uv | Python package manager |
+| Claude Code | AI coding assistant (CLI) |
+
+The script is **idempotent**—safe to run multiple times. It skips already-installed components.
+
+---
+
+## Advanced Setup
+
+For MCP server configuration and additional options:
+
+**Interactive installer:**
 ```bash
 ./scripts/install.sh
 ```
 
-## What Gets Installed
-
-- **Homebrew** - Package manager
-- **Node.js** - Required for MCP servers
-- **VS Code** - Editor
-- **Cursor** - AI-powered editor
-- **Claude Code CLI** - Terminal AI assistant
-- **jq, uv** - Dependencies for MCP servers
+This provides:
+- MCP server secrets configuration
+- Sync to Cursor, Claude Desktop, and Roo Code
 
 ## MCP Servers
 
@@ -81,6 +105,38 @@ template/.rulesync/
   mcp.json.template               # MCP config with $VAR placeholders
   mcp.json                        # Generated config (gitignored)
 ```
+
+## Troubleshooting
+
+### Quick Start Script Issues
+
+| Issue | Solution |
+|-------|----------|
+| "Permission denied" | Don't use `sudo`. Enter your password when prompted by Homebrew |
+| "Command not found: claude" | Open a **new** terminal window after installation |
+| "Network error" | Check internet connection; retry in a few minutes |
+| "Unsupported macOS" | Requires macOS Monterey (12.0) or newer |
+| Script hangs | Check network; Homebrew download can take several minutes |
+
+### Re-running the Setup
+
+The setup script is **idempotent**—safe to run multiple times:
+- Already-installed components are skipped
+- No duplicate PATH entries are added
+- Claude Code is updated if a newer version exists
+
+If something went wrong, simply run the command again:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/joachimbrindeau/global/main/scripts/setup.sh | bash
+```
+
+### Getting Help
+
+- Open an issue: https://github.com/joachimbrindeau/global/issues
+- Check Claude Code docs: https://claude.ai/docs
+
+---
 
 ## How It Works
 
