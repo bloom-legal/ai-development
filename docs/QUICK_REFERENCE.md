@@ -1,46 +1,40 @@
-# Quick Reference Card
+# Quick Reference
 
-## Daily Commands
+## Commands
 
 ```bash
-./sync-rules.sh sync    # Sync everything to all projects
-./sync-rules.sh mcp     # Sync MCPs to global configs only
-./scripts/check.sh              # Verify setup
-./scripts/check.sh --fix        # Auto-fix issues
+./sync-rules.sh              # Sync all global configs
+./sync-rules.sh mcp          # Sync MCP servers only
+./sync-rules.sh speckit-all  # Init SpecKit in all projects
+./scripts/check.sh           # Verify setup
+./scripts/check.sh --fix     # Auto-fix issues
 ```
 
 ## Custom Slash Commands
 
 | Command | What it does |
 |---------|--------------|
-| `/custom-libdoc lodash` | Generate library feature docs |
+| `/custom-libdoc lodash` | Generate library docs |
 | `/custom-upgrade` | Upgrade deps safely |
 | `/custom-refactor` | Parallel codebase refactor |
 | `/custom-structure` | Analyze project structure |
 
 ## Paths
 
-| What | Where |
-|------|-------|
-| Commands | `template/.claude/commands/` |
-| Hooks | `template/.claude/hooks/` |
-| Agents | `template/.claude/agents/` |
-| Rules | `template/.rulesync/rules/` |
-| MCP template | `template/.rulesync/mcp.json.template` |
-| CLAUDE.md | `template/CLAUDE.md` |
-| Secrets | `.env` |
+| What | Source | Destination |
+|------|--------|-------------|
+| Commands | `template/.claude/commands/` | `~/.claude/commands/` |
+| Hooks | `template/.claude/hooks/` | `~/.claude/hooks/` |
+| Agents | `template/.claude/agents/` | `~/.claude/agents/` |
+| CLAUDE.md | `template/CLAUDE.md` | `~/.claude/CLAUDE.md` |
+| MCP | `template/.rulesync/mcp.json.template` | `~/.cursor/mcp.json` |
+| Secrets | `.env` | (used for MCP generation) |
 
 ## Adding a New Command
 
 1. Create `template/.claude/commands/custom-name.md`
-2. Add frontmatter:
-   ```yaml
-   ---
-   description: "One-liner for help menu"
-   targets: ["*"]
-   ---
-   ```
-3. Run `./sync-rules.sh sync`
+2. Run `./sync-rules.sh`
+3. Done - available globally in Claude Code
 
 ## Adding a New MCP Server
 
@@ -48,28 +42,19 @@
 2. Add secrets to `.env` if needed
 3. Run `./sync-rules.sh mcp`
 
-## Building Blocks Toggle
+## Cursor Rules Setup
 
-Edit `scripts/lib/building-blocks.sh`:
-```bash
-ENABLE_SPECKIT=true    # .specify templates
-ENABLE_RULESYNC=true   # rules, .aiignore
-```
+Cursor uses **User Rules** (one-time setup):
 
-Note: Commands, hooks, agents are always synced to global `~/.claude/`
+1. Open Cursor → Settings → Rules → User Rules
+2. Paste content from `template/CLAUDE.md`
+3. Done - applies to all projects
 
 ## Troubleshooting
 
 ```bash
-# Check what's wrong
-./scripts/check.sh
-
-# Fix automatically
-./scripts/check.sh --fix
-
-# Regenerate MCP configs
-./sync-rules.sh mcp
-
-# Full re-sync
-./sync-rules.sh sync
+./scripts/check.sh           # Check what's wrong
+./scripts/check.sh --fix     # Fix automatically
+./sync-rules.sh mcp          # Regenerate MCP configs
+./sync-rules.sh              # Full re-sync
 ```
