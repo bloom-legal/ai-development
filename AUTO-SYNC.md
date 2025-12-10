@@ -35,7 +35,6 @@ Your projects stay automatically updated using multiple sync strategies.
 
 ### 3. Manual Sync (On Demand)
 - **Command**: `./sync-rules.sh sync`
-- **Background**: `./scripts/auto-sync.sh --background`
 
 ## What Gets Synced
 

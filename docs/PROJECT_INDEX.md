@@ -185,8 +185,7 @@ Modular bash libraries in [scripts/lib/](scripts/lib/):
 |--------|---------|
 | [common.sh](scripts/lib/common.sh) | Shared utilities, colors, logging |
 | [building-blocks.sh](scripts/lib/building-blocks.sh) | Modular sync functions |
-| [mcp-manager.sh](scripts/lib/mcp-manager.sh) | MCP config generation |
-| [mcp-setup.sh](scripts/lib/mcp-setup.sh) | MCP server installation |
+| [mcp.sh](scripts/lib/mcp.sh) | MCP config and sync |
 | [installation.sh](scripts/lib/installation.sh) | Tool installation |
 | [tui.sh](scripts/lib/tui.sh) | Terminal UI components |
 
@@ -279,15 +278,13 @@ curl -fsSL https://raw.githubusercontent.com/bloom-legal/ai-development/main/boo
 
 ```
 global/
-├── sync-rules.sh               # Main entry point
+├── sync-rules.sh               # Main CLI
 ├── bootstrap.sh                # Remote curl install
 ├── scripts/
 │   ├── install.sh              # Interactive installer
 │   ├── uninstall.sh            # Clean removal
 │   ├── check.sh                # Verify setup
-│   ├── auto-sync.sh            # Background sync
-│   ├── lib/                    # Shell modules
-│   └── js/                     # JS utilities
+│   └── lib/                    # Shell modules
 ├── template/                   # SOURCE OF TRUTH
 │   ├── .claude/                # → syncs to ~/.claude/
 │   │   ├── commands/           # Slash commands

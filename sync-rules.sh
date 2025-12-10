@@ -9,8 +9,8 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=scripts/lib/common.sh
 source "$SCRIPT_DIR/scripts/lib/common.sh"
-# shellcheck source=scripts/lib/mcp-manager.sh
-source "$SCRIPT_DIR/scripts/lib/mcp-manager.sh"
+# shellcheck source=scripts/lib/mcp.sh
+source "$SCRIPT_DIR/scripts/lib/mcp.sh"
 # shellcheck source=scripts/lib/building-blocks.sh
 source "$SCRIPT_DIR/scripts/lib/building-blocks.sh"
 
