@@ -5,8 +5,8 @@ set -e
 
 # Load common functions (if available, otherwise define minimal versions)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd || pwd)"
-if [[ -f "$SCRIPT_DIR/scripts/bash/lib/common.sh" ]]; then
-    source "$SCRIPT_DIR/scripts/bash/lib/common.sh"
+if [[ -f "$SCRIPT_DIR/scripts/lib/common.sh" ]]; then
+    source "$SCRIPT_DIR/scripts/lib/common.sh"
 else
     # Fallback minimal definitions for curl | bash execution
     init_colors() {

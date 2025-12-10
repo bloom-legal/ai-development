@@ -5,8 +5,8 @@ set -e
 
 # Load common functions
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$SCRIPT_DIR/scripts/bash/lib/common.sh"
-source "$SCRIPT_DIR/scripts/bash/lib/tui.sh"
+source "$SCRIPT_DIR/scripts/lib/common.sh"
+source "$SCRIPT_DIR/scripts/lib/tui.sh"
 
 # Check if terminal supports TUI
 if check_tui_support; then

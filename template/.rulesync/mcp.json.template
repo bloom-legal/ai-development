@@ -10,9 +10,9 @@
         "--access-token",
         "$SENTRY_AUTH_TOKEN",
         "--host",
-        "sentry.klarc.eu",
+        "https://sentry.monitoring.klarc.eu",
         "--organization-slug",
-        "sentry"
+        "klarc"
       ]
     },
     "context7": {

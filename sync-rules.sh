@@ -7,12 +7,12 @@ set -e
 
 # Load common functions and modules
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# shellcheck source=scripts/bash/lib/common.sh
-source "$SCRIPT_DIR/scripts/bash/lib/common.sh"
-# shellcheck source=scripts/bash/lib/mcp-manager.sh
-source "$SCRIPT_DIR/scripts/bash/lib/mcp-manager.sh"
-# shellcheck source=scripts/bash/lib/building-blocks.sh
-source "$SCRIPT_DIR/scripts/bash/lib/building-blocks.sh"
+# shellcheck source=scripts/lib/common.sh
+source "$SCRIPT_DIR/scripts/lib/common.sh"
+# shellcheck source=scripts/lib/mcp-manager.sh
+source "$SCRIPT_DIR/scripts/lib/mcp-manager.sh"
+# shellcheck source=scripts/lib/building-blocks.sh
+source "$SCRIPT_DIR/scripts/lib/building-blocks.sh"
 
 # Config - derive paths from script location
 export DEV_DIR="$(get_dev_folder)"
@@ -53,10 +53,9 @@ preflight_check() {
 # Display enabled building blocks
 display_building_blocks() {
     header "Building Blocks Configuration:"
-    log "  diet103:   $([ "$ENABLE_DIET103" = "true" ] && echo "ENABLED" || echo "DISABLED")"
-    log "  SpecKit:   $([ "$ENABLE_SPECKIT" = "true" ] && echo "ENABLED" || echo "DISABLED")"
-    log "  Rulesync:  $([ "$ENABLE_RULESYNC" = "true" ] && echo "ENABLED" || echo "DISABLED")"
-    log "  Commands:  dynamic (from .rulesync/commands/)"
+    log "  Claude Code: GLOBAL (~/.claude/) - commands, hooks, agents"
+    log "  Cursor/Roo:  per-project - rules, commands"
+    log "  SpecKit:     $([ "$ENABLE_SPECKIT" = "true" ] && echo "ENABLED" || echo "DISABLED")"
     echo ""
 }
 
@@ -95,11 +94,15 @@ case "$action" in
         ;;
 
     sync|generate)
-        # Sync MCPs and CLAUDE.md to global configs
+        # GLOBAL: Sync MCPs, CLAUDE.md, and Claude Code config (once)
+        header "Syncing GLOBAL configs..."
         sync_global_mcps
         sync_global_claude_md
+        sync_global_claude_config
+        echo ""
 
-        # Auto-init + sync rules/commands to ALL projects
+        # PER-PROJECT: Sync rules/commands for Cursor/Roo only
+        header "Syncing per-project configs (Cursor/Roo)..."
         count=0
         init_count=0
         for dir in "$DEV_DIR"/*/; do
@@ -155,12 +158,11 @@ case "$action" in
         echo "  update  - Update tools and sync"
         echo ""
         echo "Building Blocks:"
-        echo "  Edit sync-rules.sh to enable/disable:"
-        echo "  - ENABLE_DIET103   : Hooks, skills, agents"
+        echo "  Edit scripts/lib/building-blocks.sh:"
         echo "  - ENABLE_SPECKIT   : SpecKit templates"
         echo "  - ENABLE_RULESYNC  : Rules and .aiignore"
         echo ""
-        echo "  Commands are auto-discovered from template/.rulesync/commands/"
+        echo "  Commands, hooks, agents always sync to ~/.claude/ (global)"
         exit 1
         ;;
 esac

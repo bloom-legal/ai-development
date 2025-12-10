@@ -6,10 +6,10 @@ set -e
 
 # Load common functions and modules
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$SCRIPT_DIR/scripts/bash/lib/common.sh"
-source "$SCRIPT_DIR/scripts/bash/lib/tui.sh"
-source "$SCRIPT_DIR/scripts/bash/lib/installation.sh"
-source "$SCRIPT_DIR/scripts/bash/lib/mcp-setup.sh"
+source "$SCRIPT_DIR/scripts/lib/common.sh"
+source "$SCRIPT_DIR/scripts/lib/tui.sh"
+source "$SCRIPT_DIR/scripts/lib/installation.sh"
+source "$SCRIPT_DIR/scripts/lib/mcp-setup.sh"
 
 AUTO_MODE=false
 SKIP_SECRETS=false

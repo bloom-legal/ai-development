@@ -2,12 +2,21 @@
 
 Your projects stay automatically updated using multiple sync strategies.
 
+## KISS Architecture
+
+| Config | Location | Scope |
+|--------|----------|-------|
+| **Commands, Hooks, Agents** | `~/.claude/` | Global (all projects) |
+| **MCP Servers** | `~/.cursor/mcp.json`, `~/.claude.json` | Global |
+| **CLAUDE.md** | `~/.claude/CLAUDE.md` | Global |
+| **Rules, .aiignore** | Per-project `.rulesync/` | Cursor/Roo only |
+
 ## Automatic Sync Methods
 
 ### 1. Git Hook (Automatic on Pull)
 - **Trigger**: Runs automatically after `git pull` in global repo
 - **Location**: `.git/hooks/post-merge`
-- **What**: Syncs infrastructure changes to all projects
+- **What**: Syncs infrastructure changes
 - **Log**: `/tmp/global-sync.log`
 
 ### 2. Daily Sync (LaunchAgent)
@@ -17,7 +26,6 @@ Your projects stay automatically updated using multiple sync strategies.
   ```bash
   launchctl load ~/Library/LaunchAgents/com.global.autosync.plist
   launchctl start com.global.autosync
-  launchctl list | grep autosync
   ```
 - **Uninstall**:
   ```bash
@@ -26,29 +34,23 @@ Your projects stay automatically updated using multiple sync strategies.
   ```
 
 ### 3. Manual Sync (On Demand)
-- **Command**: `./auto-sync.sh`
+- **Command**: `./sync-rules.sh sync`
 - **Background**: `./auto-sync.sh --background`
-- **Original**: `./sync-rules.sh sync`
 
 ## What Gets Synced
 
-From `~/Development/global/template/` to all projects:
+### Global (once)
+- `~/.claude/commands/` - Slash commands
+- `~/.claude/hooks/` - Pre/post tool hooks
+- `~/.claude/agents/` - Agent definitions
+- `~/.claude/CLAUDE.md` - Development principles
+- `~/.cursor/mcp.json` - MCP servers
+- `~/.claude.json` - Claude Code MCP config
 
-| Module | What | Scope |
-|--------|------|-------|
-| **CLAUDE.md** | Development principles | `~/.claude/CLAUDE.md` (global) |
-| **MCP** | MCP server configs | Global (Cursor, Claude Code, Roo) |
-| **Commands** | Slash commands | Per-project (auto-discovered) |
-| **diet103** | Hooks, Skills, Agents | Per-project |
-| **SpecKit** | Workflow templates | Per-project |
-| **Rulesync** | Rules, `.aiignore` | Per-project |
-
-## Command Discovery
-
-Commands are auto-discovered from `template/.rulesync/commands/`:
-- All `*.md` files synced to each project's `.rulesync/commands/` and `.claude/commands/`
-- No hardcoded command lists
-- Add new commands by dropping `.md` files into the directory
+### Per-Project (Cursor/Roo only)
+- `.rulesync/rules/` - AI rules
+- `.rulesync/commands/` - Commands for Cursor/Roo
+- `.rulesync/.aiignore` - Ignore patterns
 
 ## Monitoring
 
@@ -56,40 +58,26 @@ Commands are auto-discovered from `template/.rulesync/commands/`:
 # View latest sync log
 cat /tmp/global-sync.log
 
-# Check LaunchAgent logs
-tail -f /tmp/global-autosync.log
-tail -f /tmp/global-autosync.error.log
-
 # Manual check
-cd ~/Development/global
 ./check.sh
 ```
 
 ## Building Blocks
 
-Enable/disable modules in `sync-rules.sh`:
+Edit `scripts/lib/building-blocks.sh`:
 ```bash
-ENABLE_DIET103=true    # Hooks + Skills + Agents
 ENABLE_SPECKIT=true    # SpecKit templates
 ENABLE_RULESYNC=true   # Rules and .aiignore
 ```
 
-Commands are always synced (dynamic discovery from `.rulesync/commands/`).
-
 ## Update Workflow
 
 1. Make changes in `~/Development/global/template/`
-2. Commit and push (git hook runs sync automatically)
-3. Or run `./auto-sync.sh` manually
-4. All projects updated automatically
-
-## Version Tracking
-
-See `template/module-manifest.json` for module versions and sync status.
+2. Run `./sync-rules.sh sync`
+3. Global configs updated immediately
+4. Per-project configs synced for Cursor/Roo
 
 ## Safety Features
 
-- Logs all operations to `/tmp/`
 - Pre-flight checks prevent broken deployments
-- Modular - disable any building block
 - Skip patterns: `global`, `_archives`, hidden folders

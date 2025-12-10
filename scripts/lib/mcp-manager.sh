@@ -5,7 +5,7 @@
 # Note: This module expects SCRIPT_DIR, TEMPLATE_DIR, DEV_DIR to be set by the caller
 # Load common functions if not already loaded (use +x to check if SET)
 if [ -z "${COLOR_GREEN+x}" ]; then
-    # shellcheck source=scripts/bash/lib/common.sh
+    # shellcheck source=scripts/lib/common.sh
     source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 fi
 

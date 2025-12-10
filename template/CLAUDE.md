@@ -24,8 +24,13 @@ Before installing any dependency:
 2. Install the latest stable version
 3. Never install outdated versions
 
-### Context7 for Documentation
-Always use Context7 MCP to get up-to-date documentation before implementing with any library.
+### Library Documentation Workflow
+Before implementing with any library:
+1. **Check local docs first**: Read `~/.claude/library-docs/{library-name}.md` if it exists
+2. **Generate if missing**: Run `/custom-libdoc {library}` to create documentation
+3. **Fall back to Context7**: Use Context7 MCP for real-time queries not covered in local docs
+
+Local docs are AI-optimized summaries with features, methods, and quick-start info. Always prefer them over raw Context7 queries for faster context loading.
 
 ## Quality Mandate
 
